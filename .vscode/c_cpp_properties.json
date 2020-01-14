@@ -1,0 +1,19 @@
+{
+    "configurations": [
+        {
+            "name": "Win32",
+            "includePath": [
+                "${workspaceRoot}/**",
+                "F:/Program/ProMaker/CCPP/Compiler/mingw64/x86_64-w64-mingw32/include/**",
+                "F:/Program/ProMaker/CCPP/Compiler/3rd/include/**"
+            ],
+            "defines": [
+                "_DEBUG",
+                "UNICODE",
+                "_UNICODE"
+            ],
+            "compilerPath": "F:\\Program\\ProMaker\\CCPP\\Compiler\\mingw64\\bin\\gcc.exe"
+        }
+    ],
+    "version": 4
+}

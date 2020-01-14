@@ -1,0 +1,26 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"iostream": "cpp",
+			"string": "cpp",
+			"random": "cpp",
+			"*.tcc": "cpp",
+			"thread": "cpp",
+			"complex": "cpp",
+			"sstream": "cpp",
+			"ostream": "cpp",
+			"iosfwd": "cpp",
+			"*.ipp": "cpp",
+			"deque": "cpp",
+			"list": "cpp",
+			"vector": "cpp",
+			"system_error": "cpp",
+			"array": "cpp"
+		}
+	}
+}
