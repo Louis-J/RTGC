@@ -5,29 +5,12 @@
 
 using namespace std;
 
-class Test1 {
-private:
-    string str;
-public:
-    Test1(string str):str(str){}
-    Test1(Test1 &t):str(t.str){}
-    ~Test1() {
-        cout << str << " destructor\n";
-    }
-    void print() {
-        cout << str << '\n';
-    }
-};
-
 
 class Test2 {
 public:
     string str;
     agent_ptr<Test2> next;
 public:
-    void LinkAnce(void *n, void *o = nullptr) {
-        next.LinkAnce(n, o);
-    }
     Test2(string str):str(str){}
     Test2(Test2 &t):str(t.str){}
     ~Test2() {
