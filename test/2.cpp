@@ -1,8 +1,8 @@
 #include<iostream>
 #include<string>
 #include<memory>
-#include<RTGC.hpp>
-#include <boost/timer.hpp>
+#include<include/RTGC/RTGC.hpp>
+#include<boost/timer.hpp>
 
 using namespace std;
 
@@ -15,7 +15,7 @@ class T1A {
     CLASSLINK(T1A, 2)
     string str;
 public:
-    RTGC::agent_ptr<T1B> next;
+    RTGC::SnapPtr<T1B> next;
     T1A(string str):str(str){}
     T1A(const T1A &t):str(t.str){}
     ~T1A() {
@@ -35,7 +35,7 @@ class T1B {
     CLASSLINK(T1B, 2)
     string str;
 public:
-    RTGC::agent_ptr<T1A> next;
+    RTGC::SnapPtr<T1A> next;
     T1B(string str):str(str){}
     T1B(const T1B &t):str(t.str){}
     ~T1B() {
@@ -80,7 +80,7 @@ class T2B {
     CLASSLINK(T2B, 2)
     string str;
 public:
-    RTGC::agent_ptr<T2A> next;
+    RTGC::SnapPtr<T2A> next;
     T2B(string str):str(str){}
     T2B(const T2B &t):str(t.str){}
     ~T2B() {
@@ -138,19 +138,14 @@ void T2B::print(void *ance = nullptr) {
 }
 
 
-class T3A {
-    public:int a;
-    int b;
-    private:int c;
-};
 
 int main() {
     cout << "Test1" << endl;
     {
-        RTGC::root_ptr<T1A> a1(new RTGC::inner_ptr<T1A>("a1"));
-        RTGC::root_ptr<T1A> a2(new RTGC::inner_ptr<T1A>("a2"));
-        a1->next = new RTGC::inner_ptr<T1B>("b1");
-        a2->next = new RTGC::inner_ptr<T1B>("b2");
+        RTGC::RootPtr<T1A> a1(new RTGC::CorePtr<T1A>("a1"));
+        RTGC::RootPtr<T1A> a2(new RTGC::CorePtr<T1A>("a2"));
+        a1->next = new RTGC::CorePtr<T1B>("b1");
+        a2->next = new RTGC::CorePtr<T1B>("b2");
         a1->next->next = a2;
         a2->next->next = a1;
         a1->print();
@@ -158,8 +153,8 @@ int main() {
     }
     cout << "Test2" << endl;
     {
-        RTGC::root_ptr<T2A> a1(new RTGC::inner_ptr<T2A>("a1", "b1"));
-        RTGC::root_ptr<T2A> a2(new RTGC::inner_ptr<T2A>("a2", "b2"));
+        RTGC::RootPtr<T2A> a1(new RTGC::CorePtr<T2A>("a1", "b1"));
+        RTGC::RootPtr<T2A> a2(new RTGC::CorePtr<T2A>("a2", "b2"));
         a1->next.next = a2;
         a2->next.next = a1;
         a1->print();

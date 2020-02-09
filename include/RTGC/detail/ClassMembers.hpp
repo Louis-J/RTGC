@@ -1,8 +1,10 @@
+#ifndef RTGC_DETAIL_CLASSMEMBERS_HPP
+#define RTGC_DETAIL_CLASSMEMBERS_HPP
+
 #include<type_traits>
 #include<utility>
 
-namespace RTGC {
-namespace reflect {
+namespace RTGC { namespace detail {
 
 #define X_1 x1
 #define X_2 X_1,x2
@@ -250,5 +252,6 @@ struct toTuple{
     }
 };
 
-}
-}
+}}
+
+#endif

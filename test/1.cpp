@@ -1,22 +1,24 @@
 #include<iostream>
 #include<string>
 #include<memory>
-#include<RTGC.hpp>
+#include<include/RTGC/RTGC.hpp>
 
 using namespace std;
 
 
-class Test2 {
-public:
+class T1 {
+    CLASSLINK(T1, 2)
     string str;
-    agent_ptr<Test2> next;
 public:
-    Test2(string str):str(str){}
-    Test2(Test2 &t):str(t.str){}
-    ~Test2() {
+    RTGC::SnapPtr<T1> next;
+
+public:
+    T1(string str):str(str){}
+    T1(T1 &t):str(t.str){}
+    ~T1() {
         cout << str << " destructor\n";
     }
-    friend ostream& operator<<(ostream &ostr, Test2 &t) {
+    friend ostream& operator<<(ostream &ostr, T1 &t) {
         ostr << t.str;
         if(t.next.isNull())
             ostr << " -> nullptr";
@@ -26,17 +28,18 @@ public:
     }
 };
 
-class Test3 {
-public:
+class T2 {
     string str;
-    shared_ptr<Test3> next;
 public:
-    Test3(string str):str(str){}
-    Test3(Test3 &t):str(t.str){}
-    ~Test3() {
+    shared_ptr<T2> next;
+
+public:
+    T2(string str):str(str){}
+    T2(T2 &t):str(t.str){}
+    ~T2() {
         cout << str << " destructor\n";
     }
-    friend ostream& operator<<(ostream &ostr, Test3 &t) {
+    friend ostream& operator<<(ostream &ostr, T2 &t) {
         ostr << t.str;
         if(t.next == nullptr)
             ostr << " -> nullptr";
@@ -47,56 +50,22 @@ public:
 };
 
 int main() {
-    // cout << "Test1" << endl;
-    // {
-    //     outer_ptr<Test1> t1a(new inner_ptr<Test1>("t1"));
-    //     outer_ptr<Test1> t1b(move(t1a));
-    //     outer_ptr<Test1> t2 = new inner_ptr<Test1>("t2");
-    // }
-    
-    // cout << "Test2" << endl;
-    // {
-    //     outer_ptr<Test2> t1a(new inner_ptr<Test2>("t1"));
-    //     outer_ptr<Test2> t1b(move(t1a));
-    //     outer_ptr<Test2> t2 = new inner_ptr<Test2>("t2");
-    //     cout << "t1a : " <<  *t1a << endl;
-    //     cout << "t1b : " <<  *t1b << endl;
-    //     cout << "t2 : " <<  *t2 << endl;
-    // }
-    // cout << "Test3" << endl;
-    // {
-    //     outer_ptr<Test2> t1a(new inner_ptr<Test2>("t1"));
-    //     outer_ptr<Test2> t1b(move(t1a));
-    //     outer_ptr<Test2> t2 = new inner_ptr<Test2>("t2");
-    //     t1a->next = t2;
-    //     cout << "t1a : " <<  *t1a << endl;
-    //     cout << "t1b : " <<  *t1b << endl;
-    //     cout << "t2 : " <<  *t2 << endl;
-    //     cout << "b0" << endl;
-    //     t1a = new inner_ptr<Test2>("333");
-    //     cout << "b1" << endl;
-    //     t1b = t1a;
-    //     cout << "b2" << endl;
-    //     t2 = t1a;
-    //     cout << "b3" << endl;
-    //     cout << *t2 << endl;
-    // }
-    cout << "Test4" << endl;
+    cout << "Test1" << endl;
     {
-        root_ptr<Test2> t1a(new inner_ptr<Test2>("t1"));
-        root_ptr<Test2> t1b(t1a);
-        root_ptr<Test2> t2 = new inner_ptr<Test2>("t2");
+        RTGC::RootPtr<T1> t1a(new RTGC::CorePtr<T1>("t1"));
+        RTGC::RootPtr<T1> t1b(t1a);
+        RTGC::RootPtr<T1> t2 = new RTGC::CorePtr<T1>("t2");
         t1a->next = t2;
         t2->next = t1a;
         cout << "t1a : " <<  *t1a << endl;
         cout << "t1b : " <<  *t1b << endl;
         cout << "t2 : " <<  *t2 << endl;
     }
-    cout << "Test5" << endl;
+    cout << "Test2" << endl;
     {
-        shared_ptr<Test3> t1a(new Test3("t1"));
-        shared_ptr<Test3> t1b(t1a);
-        shared_ptr<Test3> t2; t2.reset(new Test3("t2"));
+        shared_ptr<T2> t1a(new T2("t1"));
+        shared_ptr<T2> t1b(t1a);
+        shared_ptr<T2> t2; t2.reset(new T2("t2"));
         t1a->next = t2;
         t2->next = t1a;
         cout << "t1a : " <<  *t1a << endl;
