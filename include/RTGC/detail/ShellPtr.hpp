@@ -1,6 +1,7 @@
 #ifndef RTGC_DETAIL_SHELLPTR_HPP
 #define RTGC_DETAIL_SHELLPTR_HPP
 
+#include<cstddef>
 #include"CorePtr.hpp"
 
 namespace RTGC { namespace detail {
@@ -94,6 +95,7 @@ public:
             }
         }
     }
+
     void assign(ShellPtr<T> &o) {
         DelIn();
         innr = o.innr;
@@ -122,6 +124,7 @@ public:
             }
         }
     }
+
     ShellPtr<T>& operator=(ShellPtr<T> &o) {
         DelIn();
         innr = o.innr;
@@ -164,14 +167,32 @@ public:
         }
         return *this;
     }
+
     T& operator*() {
         return innr->real;
     }
     T* operator->() {
         return &(innr->real);
     }
-    bool isNull(){
-        return innr == nullptr;
+
+    friend bool operator==(const ShellPtr<T> &a, const ShellPtr<T> &b) {
+        return a.innr == b.innr;
+    }
+    friend bool operator==(const ShellPtr<T> &s, std::nullptr_t) {
+        return s.innr == nullptr;
+    }
+    friend bool operator==(std::nullptr_t, const ShellPtr<T> &s) {
+        return s.innr == nullptr;
+    }
+
+    friend bool operator!=(const ShellPtr<T> &a, const ShellPtr<T> &b) {
+        return a.innr != b.innr;
+    }
+    friend bool operator!=(const ShellPtr<T> &s, std::nullptr_t) {
+        return s.innr != nullptr;
+    }
+    friend bool operator!=(std::nullptr_t, const ShellPtr<T> &s) {
+        return s.innr != nullptr;
     }
 };
 

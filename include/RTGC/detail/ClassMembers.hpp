@@ -246,9 +246,7 @@ struct toTuple{
     DEF_TIE_FUNC(100);
     template <std::size_t N>
     constexpr static auto tie_as_tuple(T& val, const_size_t<N>) {
-        using M = std::enable_if<N == N, void>::type;
-        M m = N;
-        //add "DEF_TIE_FUNC(N)"(N<100) or tie_as_tuple(T& val, const_size_t<N>)<which N>100>
+        static_assert(N != N, "====================> RTGC: add tie_as_tuple(T& val, const_size_t<N>)");
     }
 };
 

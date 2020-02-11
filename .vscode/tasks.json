@@ -23,10 +23,7 @@
                 "-IF:\\Program\\ProMaker\\CCPP\\Compiler\\mingw64\\lib\\gcc\\x86_64-w64-mingw32\\7.3.0\\include\\c++\\",
                 "-IF:\\Program\\ProMaker\\CCPP\\Compiler\\range\\",
                 "-IF:\\Program\\ProMaker\\CCPP\\Compiler\\3rd\\include\\",
-                //"-ID:\\code\\Practice\\LeetCode\\",
-                //"-ID:\\code\\Practice\\simple_match\\include\\",
-                "-I${workspaceRoot}\\",
-                "-I${fileDirname}\\..\\",
+                "-I${workspaceRoot}\\include\\",
                 "-o${fileDirname}\\${fileBasenameNoExtension}.exe"
                 //"${workspaceRoot}\\${fileBasename}.exe"
             ],
@@ -61,12 +58,11 @@
             "command": "F:\\Program\\ProMaker\\CCPP\\Compiler\\mingw64\\bin\\g++.exe",
             "args": [
                 "-D LEETCODE",
-                //"-g",
                 "${file}",
                 "-std=c++2a",
                 //"-fno-jump-tables",
                 //"-fjump-tables",
-                "-O3",
+                "-O2",
                 //"-finline-functions",
                 //"-finline-small-functions",
                 //"-fno-inline-functions",
@@ -80,10 +76,64 @@
                 "-IF:\\Program\\ProMaker\\CCPP\\Compiler\\mingw64\\lib\\gcc\\x86_64-w64-mingw32\\7.3.0\\include\\c++\\",
                 "-IF:\\Program\\ProMaker\\CCPP\\Compiler\\range\\",
                 "-IF:\\Program\\ProMaker\\CCPP\\Compiler\\3rd\\include\\",
-                //"-ID:\\code\\Practice\\LeetCode\\",
-                //"-ID:\\code\\Practice\\simple_match\\include\\",
-                "-I${workspaceRoot}\\",
-                "-I${fileDirname}\\..\\",
+                "-I${workspaceRoot}\\include\\",
+                "-o${fileDirname}\\${fileBasenameNoExtension}.exe"
+                //"${workspaceRoot}\\${fileBasename}.exe"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "new",
+                //"reveal": "silent"
+            },
+            "problemMatcher": {
+                "owner": "cpp",
+                "fileLocation": [
+                    "relative",
+                    "\\"
+                ],
+                "pattern": [
+                    {
+                        "regexp": "^(.*):(\\d+):(\\d+):\\s+(warning|error):\\s+(.*)$",
+                        "file": 1,
+                        "line": 2,
+                        "column": 3,
+                        "severity": 4,
+                        "message": 5
+                    }
+                ]
+            }
+        },
+        {
+            "label": "clang",
+            "command": "F:\\Program\\ProMaker\\CCPP\\Compiler\\LLVM64\\bin\\clang++.exe",
+            "args": [
+                "-D LEETCODE",
+                // "-g",
+                "-g3",
+                "-O0",
+                "--target=x86_64-pc-windows-gnu",
+                "${file}",
+                "-std=c++2a",
+                // "-O3",
+                //"-fno-jump-tables",
+                //"-fjump-tables",
+                //"-fno-inline-functions",
+                "-Wall", // 开启额外警告
+                "-Wno-invalid-source-encoding",
+                "-Wno-unused-variable",
+                "-IF:\\Program\\ProMaker\\CCPP\\Compiler\\mingw64\\lib\\gcc\\x86_64-w64-mingw32\\7.3.0\\include\\c++",
+                "-IF:\\Program\\ProMaker\\CCPP\\Compiler\\mingw64\\lib\\gcc\\x86_64-w64-mingw32\\8.1.0\\include\\c++",
+                "-IF:\\Program\\ProMaker\\CCPP\\Compiler\\mingw64\\include",
+                "-IF:\\Program\\ProMaker\\CCPP\\Compiler\\mingw64\\x86_64-w64-mingw32\\include",
+                "-IF:\\Program\\ProMaker\\CCPP\\Compiler\\range\\",
+                "-IF:\\Program\\ProMaker\\CCPP\\Compiler\\3rd\\include\\",
+                "-I${workspaceRoot}\\include\\",
                 "-o${fileDirname}\\${fileBasenameNoExtension}.exe"
                 //"${workspaceRoot}\\${fileBasename}.exe"
             ],
@@ -125,7 +175,7 @@
                 "--target=x86_64-pc-windows-gnu",
                 "${file}",
                 "-std=c++2a",
-                "-O3",
+                "-O2",
                 //"-fno-jump-tables",
                 //"-fjump-tables",
                 //"-fno-inline-functions",
@@ -138,10 +188,7 @@
                 "-IF:\\Program\\ProMaker\\CCPP\\Compiler\\mingw64\\x86_64-w64-mingw32\\include",
                 "-IF:\\Program\\ProMaker\\CCPP\\Compiler\\range\\",
                 "-IF:\\Program\\ProMaker\\CCPP\\Compiler\\3rd\\include\\",
-                //"-ID:\\code\\Practice\\LeetCode\\",
-                //"-ID:\\code\\Practice\\simple_match\\include\\",
-                "-I${workspaceRoot}\\",
-                "-I${fileDirname}\\..\\",
+                "-I${workspaceRoot}\\include\\",
                 "-o${fileDirname}\\${fileBasenameNoExtension}.exe"
                 //"${workspaceRoot}\\${fileBasename}.exe"
             ],
@@ -198,10 +245,7 @@
                 "-IF:\\Program\\ProMaker\\CCPP\\Compiler\\mingw64\\x86_64-w64-mingw32\\include",
                 "-IF:\\Program\\ProMaker\\CCPP\\Compiler\\range\\",
                 "-IF:\\Program\\ProMaker\\CCPP\\Compiler\\3rd\\include\\",
-                //"-ID:\\code\\Practice\\LeetCode\\",
-                //"-ID:\\code\\Practice\\simple_match\\include\\",
-                "-I${workspaceRoot}\\",
-                "-I${fileDirname}\\..\\",
+                "-I${workspaceRoot}\\include\\",
                 "-o${fileDirname}\\${fileBasenameNoExtension}.ll"
                 //"${workspaceRoot}\\${fileBasename}.exe"
             ],

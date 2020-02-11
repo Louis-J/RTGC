@@ -1,7 +1,7 @@
 #include<iostream>
 #include<string>
 #include<memory>
-#include<include/RTGC/RTGC.hpp>
+#include<RTGC/RTGC.hpp>
 #include<boost/timer.hpp>
 
 using namespace std;
@@ -50,7 +50,7 @@ public:
 void T1A::print(void *ance = nullptr) {
     if(ance != this) {
         cout << str << " -> ";
-        if(next.isNull())
+        if(next == nullptr)
             cout << "nullptr";
         else if(ance == nullptr)
             next->print(this);
@@ -63,7 +63,7 @@ void T1A::print(void *ance = nullptr) {
 void T1B::print(void *ance = nullptr) {
     if(ance != this) {
         cout << str << " -> ";
-        if(next.isNull())
+        if(next == nullptr)
             cout << "nullptr";
         else if(ance == nullptr)
             next->print(this);
@@ -126,7 +126,7 @@ void T2A::print(void *ance = nullptr) {
 void T2B::print(void *ance = nullptr) {
     if(ance != this) {
         cout << str << " -> ";
-        if(next.isNull())
+        if(next == nullptr)
             cout << "nullptr";
         else if(ance == nullptr)
             next->print(this);

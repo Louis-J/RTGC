@@ -5,11 +5,10 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "(gdb) Launch",
-            //"preLaunchTask": "build",
+            "name": "gdb",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/${fileBasenameNoExtension}.exe",
+            "program": "${fileDirname}\\${fileBasenameNoExtension}.exe",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
@@ -19,11 +18,23 @@
             "miDebuggerPath": "F:/Program/ProMaker/CCPP/Compiler/mingw64/bin/gdb.exe",
             "setupCommands": [
                 {
-                    "description": "Enable pretty-printing for gdb",
+                    "description": "为 gdb 启用整齐打印",
                     "text": "-enable-pretty-printing",
                     "ignoreFailures": true
                 }
             ]
+        },
+        {
+            "name": "lldb2",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${fileDirname}\\${fileBasenameNoExtension}.exe",
+            "args": [],
+            "cwd": "${workspaceRoot}",
+            "expressions": "native",
+            // "initCommands": [
+            //     "command script import F:/Program/ProMaker/CCPP/Compiler/debugvis.py" // <<<<< This is the important bit
+            // ]
         },
     ]
 }

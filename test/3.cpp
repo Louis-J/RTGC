@@ -1,8 +1,8 @@
 #include<iostream>
 #include<string>
 #include<memory>
-#include<include/RTGC/RTGC.hpp>
-#include"3.hpp"
+#include<RTGC/RTGC.hpp>
+#include"memUse.hpp"
 #include<boost/timer.hpp>
 
 using namespace std;
@@ -20,7 +20,7 @@ public:
     }
     friend ostream& operator<<(ostream &ostr, T1 &t) {
         ostr << t.str;
-        if(t.next.isNull())
+        if(t.next == nullptr)
             ostr << " -> nullptr";
         else
             ostr << " -> " << t.next->str;
@@ -49,11 +49,11 @@ public:
 
 #define LOOPSIZE 10000000
 int main() {
-    size_t memUse = getCurrentRSS();
     cout << endl << "Press any key:";
     cin.get();
     cout << "Test1" << endl;
     {
+        const size_t memUse = getCurrentRSS();
         const boost::timer timeBegin;
         for (int i = 0; i < LOOPSIZE; i++) {
             RTGC::RootPtr<T1> t1a(new RTGC::CorePtr<T1>("t1"));
@@ -64,19 +64,16 @@ int main() {
             // cout << "t1a : " <<  *t1a << endl;
             // cout << "t1b : " <<  *t1b << endl;
             // cout << "t2 : " <<  *t2 << endl;
-            
-            // RTGC::RootPtr<T2> t3(new RTGC::CorePtr<T2>("haha"));
-            // cout << *t3 << endl;
         }
         const uint32_t timeBy = timeBegin.elapsed() * 1000;
         cout << "time1:" << timeBy << "ms" << endl;
         cout << "memory use1:" << getCurrentRSS() - memUse << endl;
-        memUse = getCurrentRSS();
     }
     cout << endl << "Press any key:";
     cin.get();
     cout << "Test2" << endl;
     {
+        const size_t memUse = getCurrentRSS();
         const boost::timer timeBegin;
         for (int i = 0; i < LOOPSIZE; i++) {
             shared_ptr<T2> t1a(new T2("t1"));
@@ -91,7 +88,6 @@ int main() {
         const uint32_t timeBy = timeBegin.elapsed() * 1000;
         cout << "time2:" << timeBy << "ms" << endl;
         cout << "memory use2:" << getCurrentRSS() - memUse << endl;
-        memUse = getCurrentRSS();
     }
 }
 

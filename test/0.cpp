@@ -1,11 +1,3 @@
-# RTGC
-一个用于C++的智能指针，解决了环引用问题，可自动管理内存，无需人工释放
-
-[最新文档](http://github.com/RTGC/)
-
-### 简单示例
-```c++
-// requires: C++17
 #include<iostream>
 #include<memory>
 #include<string>
@@ -51,20 +43,3 @@ int main() {
     }
     return 0;
 }
-```
-输出:
-```
-RTGC:
-t1 destructor
-t2 destructor
-shared_ptr:
-```
-
-### 前提及限制
-
-* 支持C++17的编译器（支持：GCC, Clang）
-* 所有使用的有引用关系的类均需按规范改写（暂未支持大部分STL容器及算法；仅支持std::string等无引用关系的类）
-
-### 许可证
-
-使用MS-RL半开源发布

@@ -1,13 +1,21 @@
 #include<iostream>
 #include<string>
 #include<memory>
-#include<include/RTGC/RTGC.hpp>
+#include<RTGC/RTGC.hpp>
 
 using namespace std;
 
 
 class T1 {
     CLASSLINK(T1, 2)
+    // public:
+    // inline void LinkAnce(void *n, void *o = nullptr) {
+    //     if constexpr(decltype(RTGC::detail::haveLinkAnce<RTGC::SnapPtr<T1>>(0))::value) {
+    //         next.LinkAnce(n, o);
+    //         std::cout << "l\n";
+    //     }
+    // }
+private:
     string str;
 public:
     RTGC::SnapPtr<T1> next;
@@ -20,7 +28,7 @@ public:
     }
     friend ostream& operator<<(ostream &ostr, T1 &t) {
         ostr << t.str;
-        if(t.next.isNull())
+        if(t.next == nullptr)
             ostr << " -> nullptr";
         else
             ostr << " -> " << t.next->str;
