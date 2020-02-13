@@ -12,7 +12,7 @@ class T1 {
     CLASSLINK(T1, 2)
     string str;
 public:
-    RTGC::SnapPtr<T1> next;
+    RTGC::ShellPtr<T1> next;
     T1(string str):str(str){}
     T1(const T1 &t):str(t.str){}
     ~T1() {
@@ -56,9 +56,9 @@ int main() {
         const size_t memUse = getCurrentRSS();
         const boost::timer timeBegin;
         for (int i = 0; i < LOOPSIZE; i++) {
-            RTGC::RootPtr<T1> t1a(new RTGC::CorePtr<T1>("t1"));
-            RTGC::RootPtr<T1> t1b(t1a);
-            RTGC::RootPtr<T1> t2 = new RTGC::CorePtr<T1>("t2");
+            RTGC::ShellPtr<T1> t1a(new RTGC::CorePtr<T1>("t1"));
+            RTGC::ShellPtr<T1> t1b(t1a);
+            RTGC::ShellPtr<T1> t2 = new RTGC::CorePtr<T1>("t2");
             t1a->next = t2;
             t2->next = t1a;
             // cout << "t1a : " <<  *t1a << endl;

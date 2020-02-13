@@ -9,16 +9,22 @@ using namespace std;
 class T1 {
     CLASSLINK(T1, 2)
     // public:
-    // inline void LinkAnce(void *n, void *o = nullptr) {
-    //     if constexpr(decltype(RTGC::detail::haveLinkAnce<RTGC::SnapPtr<T1>>(0))::value) {
+    // inline void LinkAnce(void *n, void *o) {
+    //     if constexpr(decltype(RTGC::detail::haveLinkAnce<RTGC::ShellPtr<T1>>(0))::value) {
     //         next.LinkAnce(n, o);
-    //         std::cout << "l\n";
+    //         // std::cout << "l\n";
+    //     }
+    // }
+    // inline void LinkInit(void *n) {
+    //     if constexpr(decltype(RTGC::detail::haveLinkAnce<RTGC::ShellPtr<T1>>(0))::value) {
+    //         next.LinkInit(n);
+    //         // std::cout << "2\n";
     //     }
     // }
 private:
     string str;
 public:
-    RTGC::SnapPtr<T1> next;
+    RTGC::ShellPtr<T1> next;
 
 public:
     T1(string str):str(str){}
@@ -60,9 +66,9 @@ public:
 int main() {
     cout << "Test1" << endl;
     {
-        RTGC::RootPtr<T1> t1a(new RTGC::CorePtr<T1>("t1"));
-        RTGC::RootPtr<T1> t1b(t1a);
-        RTGC::RootPtr<T1> t2 = new RTGC::CorePtr<T1>("t2");
+        RTGC::ShellPtr<T1> t1a(new RTGC::CorePtr<T1>("t1"));
+        RTGC::ShellPtr<T1> t1b(t1a);
+        RTGC::ShellPtr<T1> t2 = new RTGC::CorePtr<T1>("t2");
         t1a->next = t2;
         t2->next = t1a;
         cout << "t1a : " <<  *t1a << endl;

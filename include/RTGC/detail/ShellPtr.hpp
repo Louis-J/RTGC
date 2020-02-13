@@ -2,7 +2,6 @@
 #define RTGC_DETAIL_SHELLPTR_HPP
 
 #include<cstddef>
-#include"CorePtr.hpp"
 
 namespace RTGC { namespace detail {
 
@@ -12,7 +11,7 @@ class CorePtr;
 template<typename T>
 class ShellPtr {
 //private:
-public:
+// public:
     void *ance;
     CorePtr<T> *innr = nullptr;//指向的内节点，即指向的堆地址
     ShellPtr<T> *ipriv = nullptr, *inext = nullptr;//子层上一结点,下一结点
@@ -58,18 +57,8 @@ public:
         ipriv = nullptr;
         inext = nullptr;
     }
-    void LinkAnce(void *n, void *o = nullptr) {
-        if(ance == o) {
-            ance = n;
-            if(innr != nullptr)
-                innr->LinkAnce(n, o);
-        }
-    }
-    ~ShellPtr() {
-        DelIn();
-    }
 public:
-    ShellPtr(void *ance, ShellPtr<T> &o) : ance(ance) {
+    ShellPtr(ShellPtr<T> &o) : ance(this) {
         innr = o.innr;
         if(innr != nullptr){
             ipriv = &o;
@@ -79,7 +68,7 @@ public:
                 inext->ipriv = this;
         }
     }
-    ShellPtr(void *ance, CorePtr<T> *i = nullptr) : ance(ance) {
+    ShellPtr(CorePtr<T> *i = nullptr) : ance(this) {
         innr = i;
         if(innr != nullptr){
             if(innr->outr == nullptr) {
@@ -96,33 +85,8 @@ public:
         }
     }
 
-    void assign(ShellPtr<T> &o) {
+    ~ShellPtr() {
         DelIn();
-        innr = o.innr;
-        if(innr != nullptr){
-            ipriv = &o;
-            inext = o.inext;
-            o.inext = this;
-            if(inext != nullptr)
-                inext->ipriv = this;
-        }
-    }
-    void assign(CorePtr<T> *i){
-        DelIn();
-        innr = i;
-        if(innr != nullptr){
-            if(innr->outr == nullptr) {
-                innr->outr = this;
-                innr->LinkAnce(ance);
-            }
-            else {
-                ipriv = innr->outr;
-                inext = innr->outr->inext;
-                innr->outr->inext = this;
-                if(inext != nullptr)
-                    inext->ipriv = this;
-            }
-        }
     }
 
     ShellPtr<T>& operator=(ShellPtr<T> &o) {
@@ -168,6 +132,20 @@ public:
         return *this;
     }
 
+    void LinkInit(void *n) {
+        void *o = ance;
+        ance = n;
+        if(innr != nullptr)
+            innr->LinkAnce(n, o);
+    }
+    void LinkAnce(void *n, void *o) {
+        if(ance == o) {
+            ance = n;
+            if(innr != nullptr)
+                innr->LinkAnce(n, o);
+        }
+    }
+
     T& operator*() {
         return innr->real;
     }
@@ -195,6 +173,12 @@ public:
         return s.innr != nullptr;
     }
 };
+
+template<typename>
+struct isShellPtr : public std::false_type {};
+
+template<typename V>
+struct isShellPtr<ShellPtr<V>> : public std::true_type {};
 
 }}
 

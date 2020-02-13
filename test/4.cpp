@@ -67,11 +67,11 @@ struct ListNodeB {
 struct ListNodeC {
     CLASSLINK(ListNodeC, 2)
     int val;
-    RTGC::SnapPtr<ListNodeC> next;
+    RTGC::ShellPtr<ListNodeC> next;
     ListNodeC(int x) : val(x), next(NULL) {}
-    static RTGC::RootPtr<ListNodeC> Create(initializer_list<int>& list) {
-        RTGC::RootPtr<ListNodeC> head(new RTGC::CorePtr<ListNodeC>(0));
-        RTGC::RootPtr<ListNodeC> next(head);
+    static RTGC::ShellPtr<ListNodeC> Create(initializer_list<int>& list) {
+        RTGC::ShellPtr<ListNodeC> head(new RTGC::CorePtr<ListNodeC>(0));
+        RTGC::ShellPtr<ListNodeC> next(head);
         for(auto& i : list){
             next->next = new RTGC::CorePtr<ListNodeC>(i);
             next = next->next;
@@ -163,7 +163,7 @@ int main() {
             cout << "list: " << vector<int>(list) << endl << "k: "<< k << endl;
             cout << "1: " << Solution<ListNodeA, ListNodeA*>().reverseKGroup(ListNodeA::Create(list), k) << endl;
             cout << "2: " << Solution<ListNodeB, shared_ptr<ListNodeB>>().reverseKGroup(ListNodeB::Create(list), k) << endl;
-            cout << "3: " << Solution<RTGC::CorePtr<ListNodeC>, RTGC::RootPtr<ListNodeC>>().reverseKGroup(ListNodeC::Create(list), k) << endl;
+            cout << "3: " << Solution<RTGC::CorePtr<ListNodeC>, RTGC::ShellPtr<ListNodeC>>().reverseKGroup(ListNodeC::Create(list), k) << endl;
             cout << endl;
         }
     }
@@ -205,7 +205,7 @@ int main() {
         const boost::timer timeBegin;
         for (int i = 0; i < LOOPSIZE; i++) {
             for (auto &[list, k] : exams) {
-                auto ret = Solution<RTGC::CorePtr<ListNodeC>, RTGC::RootPtr<ListNodeC>>().reverseKGroup(ListNodeC::Create(list), k);
+                auto ret = Solution<RTGC::CorePtr<ListNodeC>, RTGC::ShellPtr<ListNodeC>>().reverseKGroup(ListNodeC::Create(list), k);
             }
         }
         const uint32_t timeBy = timeBegin.elapsed() * 1000;

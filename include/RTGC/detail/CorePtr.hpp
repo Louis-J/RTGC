@@ -8,12 +8,6 @@ namespace RTGC { namespace detail {
 template<typename T>
 class ShellPtr;
 
-template<typename U, typename... Args>
-auto haveLinkAnce(int) -> decltype(std::declval<U>().LinkAnce(nullptr, nullptr), std::true_type());
-
-template<typename U>
-std::false_type haveLinkAnce(...);
-
 //内层
 template<typename T>
 class CorePtr {
@@ -21,14 +15,18 @@ class CorePtr {
     
     ShellPtr<T> *outr = nullptr;//所有者结点
     T real;
-    void LinkAnce(void *n, void *o = nullptr){
+    void LinkAnce(void *n, void *o) {
         if constexpr(decltype(haveLinkAnce<T>(0))::value) {
             real.LinkAnce(n, o);
         }
     }
 public:
     template<class... Args>
-    CorePtr(Args&&... args) :real(std::forward<Args>(args)...) {}
+    CorePtr(Args&&... args) :real(std::forward<Args>(args)...) {
+        if constexpr(decltype(haveLinkInit<T>(0))::value) {
+            real.LinkInit(nullptr);
+        }
+    }
 };
 
 }}

@@ -8,7 +8,7 @@ class T1 {//use RTGC
 private:
     std::string str;
 public:
-    RTGC::SnapPtr<T1> next;
+    RTGC::ShellPtr<T1> next;
     T1(std::string &&str):str(str){}
     ~T1() {
         std::cout << str << " destructor\n";
@@ -29,8 +29,8 @@ public:
 int main() {
     std::cout << "RTGC:" << std::endl;
     {
-        RTGC::RootPtr<T1> t1(new RTGC::CorePtr<T1>("t1"));
-        RTGC::RootPtr<T1> t2(new RTGC::CorePtr<T1>("t2"));
+        RTGC::ShellPtr<T1> t1(new RTGC::CorePtr<T1>("t1"));
+        RTGC::ShellPtr<T1> t2(new RTGC::CorePtr<T1>("t2"));
         t1->next = t2;
         t2->next = t1;
     }
