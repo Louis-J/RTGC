@@ -7,13 +7,28 @@
 #include"memUse.hpp"
 #include<boost/timer.hpp>
 
+#ifdef USE_TCMALLOC
+#include"tcmalloc.h"
+void * makeTCMallocUsed = tc_malloc(4);
+#endif
+
 using namespace std;
 
+#define HAVE_CNS 1
+#define HAVE_DES 1
 
 struct ListNodeA {
+    static size_t memUse;
+    static size_t memUseMax;
     int val;
     ListNodeA *next;
-    ListNodeA(int x) : val(x), next(NULL) {}
+    ListNodeA(int x) : val(x), next(NULL) {
+        #if HAVE_CNS
+        memUse += sizeof(ListNodeA);
+        if(memUse >= memUseMax)
+            memUseMax = memUse;
+        #endif
+    }
     static ListNodeA *Create(initializer_list<int>& list) {
         ListNodeA *head(new ListNodeA(0));
         ListNodeA *next(head);
@@ -35,12 +50,27 @@ struct ListNodeA {
             ostr << "->" << l->next;
         return ostr;
     }
+    static size_t desNum;
+    ~ListNodeA() {
+        #if HAVE_DES
+        desNum++;
+        memUse -= sizeof(ListNodeA);
+        #endif
+    }
 };
 
 struct ListNodeB {
+    static size_t memUse;
+    static size_t memUseMax;
     int val;
     shared_ptr<ListNodeB> next;
-    ListNodeB(int x) : val(x), next(NULL) {}
+    ListNodeB(int x) : val(x), next(NULL) {
+        #if HAVE_CNS
+        memUse += sizeof(ListNodeB);
+        if(memUse >= memUseMax)
+            memUseMax = memUse;
+        #endif
+    }
     static shared_ptr<ListNodeB> Create(initializer_list<int>& list) {
         shared_ptr<ListNodeB> head(new ListNodeB(0));
         shared_ptr<ListNodeB> next(head);
@@ -62,13 +92,28 @@ struct ListNodeB {
             ostr << "->" << l->next;
         return ostr;
     }
+    static size_t desNum;
+    ~ListNodeB() {
+        #if HAVE_DES
+        desNum++;
+        memUse -= sizeof(ListNodeB);
+        #endif
+    }
 };
 
 struct ListNodeC {
+    static size_t memUse;
+    static size_t memUseMax;
     CLASSLINK(ListNodeC, 2)
     int val;
     RTGC::ShellPtr<ListNodeC> next;
-    ListNodeC(int x) : val(x), next(NULL) {}
+    ListNodeC(int x) : val(x), next(NULL) {
+        #if HAVE_CNS
+        memUse += sizeof(ListNodeC);
+        if(memUse >= memUseMax)
+            memUseMax = memUse;
+        #endif
+    }
     static RTGC::ShellPtr<ListNodeC> Create(initializer_list<int>& list) {
         RTGC::ShellPtr<ListNodeC> head(new RTGC::CorePtr<ListNodeC>(0));
         RTGC::ShellPtr<ListNodeC> next(head);
@@ -89,6 +134,13 @@ struct ListNodeC {
         if(l->next != nullptr)
             ostr << "->" << l->next;
         return ostr;
+    }
+    static size_t desNum;
+    ~ListNodeC() {
+        #if HAVE_DES
+        desNum++;
+        memUse -= sizeof(ListNodeC);
+        #endif
     }
 };
 
@@ -144,7 +196,19 @@ ostream& operator<<(ostream& ostr, vector<T>&& v) {
     return ostr << "}";
 }
 
-#define LOOPSIZE 200000
+size_t ListNodeA::desNum = 0;
+size_t ListNodeB::desNum = 0;
+size_t ListNodeC::desNum = 0;
+
+size_t ListNodeA::memUse = 0;
+size_t ListNodeB::memUse = 0;
+size_t ListNodeC::memUse = 0;
+
+size_t ListNodeA::memUseMax = 0;
+size_t ListNodeB::memUseMax = 0;
+size_t ListNodeC::memUseMax = 0;
+
+#define LOOPSIZE 2000000
 int main() {
     vector<tuple<initializer_list<int>, int>> exams = {
         {{1,2,3,4,5}, 2},
@@ -175,6 +239,7 @@ int main() {
         const boost::timer timeBegin;
         for (int i = 0; i < LOOPSIZE; i++) {
             for (auto &[list, k] : exams) {
+                // auto ret = ListNodeA::Create(list);
                 auto ret = Solution<ListNodeA, ListNodeA*>().reverseKGroup(ListNodeA::Create(list), k);
             }
         }
@@ -190,6 +255,7 @@ int main() {
         const boost::timer timeBegin;
         for (int i = 0; i < LOOPSIZE; i++) {
             for (auto &[list, k] : exams) {
+                // auto ret = ListNodeB::Create(list);
                 auto ret = Solution<ListNodeB, shared_ptr<ListNodeB>>().reverseKGroup(ListNodeB::Create(list), k);
             }
         }
@@ -205,12 +271,31 @@ int main() {
         const boost::timer timeBegin;
         for (int i = 0; i < LOOPSIZE; i++) {
             for (auto &[list, k] : exams) {
+                // auto ret = ListNodeC::Create(list);
                 auto ret = Solution<RTGC::CorePtr<ListNodeC>, RTGC::ShellPtr<ListNodeC>>().reverseKGroup(ListNodeC::Create(list), k);
             }
         }
         const uint32_t timeBy = timeBegin.elapsed() * 1000;
         cout << "time3:" << timeBy << "ms" << endl;
         cout << "memory use3:" << getCurrentRSS() - memUse << endl;
+    }
+    cout << endl << "Press any key:";
+    cin.get();
+    cout << "Destruct Number:" << endl;
+    {
+        cout << "1: " << endl;
+        cout << ListNodeA::desNum << endl;
+        cout << ListNodeA::memUse << endl;
+        cout << ListNodeA::memUseMax << endl;
+        cout << "2: " << endl;
+        cout << ListNodeB::desNum << endl;
+        cout << ListNodeB::memUse << endl;
+        cout << ListNodeB::memUseMax << endl;
+        cout << "3: " << endl;
+        cout << ListNodeC::desNum << endl;
+        cout << ListNodeC::memUse << endl;
+        cout << ListNodeC::memUseMax << endl;
+        cout << endl;
     }
 }
 
