@@ -8,15 +8,9 @@
             "command": "F:\\Program\\ProMaker\\CCPP\\Compiler\\mingw64\\bin\\g++.exe",
             "args": [
                 "-D LEETCODE",
-                //"-g",
-                "-g3",
-                "-O0",
                 "${file}",
+                "-g3", "-O0",
                 "-std=c++2a",
-                //"-Og",
-                //"-O3",
-                //"-fno-inline-functions",
-                //"-fno-inline-small-functions",
                 "-Wall",    // 开启额外警告
                 "-static-libgcc",   // 静态链接
                 "-IF:\\Program\\ProMaker\\CCPP\\Compiler\\mingw64\\lib\\gcc\\x86_64-w64-mingw32\\8.1.0\\include\\c++\\",
@@ -24,8 +18,17 @@
                 "-IF:\\Program\\ProMaker\\CCPP\\Compiler\\range\\",
                 "-IF:\\Program\\ProMaker\\CCPP\\Compiler\\3rd\\include\\",
                 "-I${workspaceRoot}\\include\\",
+                "-L${workspaceRoot}\\lib\\",
+
+                // "-ltcmalloc_minimal","-lpsapi","-D USE_TCMALLOC","-DPERFTOOLS_DLL_DECL=",
+                "-ljemallocgcc",
+                "-lgc-lib",
+                
+                "-fno-builtin-malloc",
+                "-fno-builtin-calloc",
+                "-fno-builtin-realloc",
+                "-fno-builtin-free",
                 "-o${fileDirname}\\${fileBasenameNoExtension}.exe"
-                //"${workspaceRoot}\\${fileBasename}.exe"
             ],
             "group": {
                 "kind": "build",
@@ -59,26 +62,26 @@
             "args": [
                 "-D LEETCODE",
                 "${file}",
+                "-O3",
                 "-std=c++2a",
-                //"-fno-jump-tables",
-                //"-fjump-tables",
-                "-O2",
-                //"-finline-functions",
-                //"-finline-small-functions",
-                //"-fno-inline-functions",
-                //"-fno-inline-small-functions",
-                "-Wall", // 开启额外警告
-                "-Wno-sign-compare",
-                "-Wno-unused-variable",
-                "-Wno-unused-but-set-variable",
+                "-Wall",    // 开启额外警告
                 "-static-libgcc",   // 静态链接
                 "-IF:\\Program\\ProMaker\\CCPP\\Compiler\\mingw64\\lib\\gcc\\x86_64-w64-mingw32\\8.1.0\\include\\c++\\",
                 "-IF:\\Program\\ProMaker\\CCPP\\Compiler\\mingw64\\lib\\gcc\\x86_64-w64-mingw32\\7.3.0\\include\\c++\\",
                 "-IF:\\Program\\ProMaker\\CCPP\\Compiler\\range\\",
                 "-IF:\\Program\\ProMaker\\CCPP\\Compiler\\3rd\\include\\",
                 "-I${workspaceRoot}\\include\\",
+                "-L${workspaceRoot}\\lib\\",
+
+                // "-ltcmalloc_minimal","-lpsapi","-D USE_TCMALLOC","-DPERFTOOLS_DLL_DECL=",
+                "-ljemallocgcc",
+                "-lgc-lib",
+                
+                "-fno-builtin-malloc",
+                "-fno-builtin-calloc",
+                "-fno-builtin-realloc",
+                "-fno-builtin-free",
                 "-o${fileDirname}\\${fileBasenameNoExtension}.exe"
-                //"${workspaceRoot}\\${fileBasename}.exe"
             ],
             "group": {
                 "kind": "build",
@@ -93,10 +96,7 @@
             },
             "problemMatcher": {
                 "owner": "cpp",
-                "fileLocation": [
-                    "relative",
-                    "\\"
-                ],
+                "fileLocation": ["relative", "\\"],
                 "pattern": [
                     {
                         "regexp": "^(.*):(\\d+):(\\d+):\\s+(warning|error):\\s+(.*)$",
@@ -117,7 +117,7 @@
                 // "-g",
                 "-g3",
                 "-O0",
-                "--target=x86_64-pc-windows-gnu",
+                "--target=x86_64-w64-mingw32",
                 "${file}",
                 "-std=c++2a",
                 // "-O3",
@@ -127,13 +127,23 @@
                 "-Wall", // 开启额外警告
                 "-Wno-invalid-source-encoding",
                 "-Wno-unused-variable",
-                "-IF:\\Program\\ProMaker\\CCPP\\Compiler\\mingw64\\lib\\gcc\\x86_64-w64-mingw32\\7.3.0\\include\\c++",
-                "-IF:\\Program\\ProMaker\\CCPP\\Compiler\\mingw64\\lib\\gcc\\x86_64-w64-mingw32\\8.1.0\\include\\c++",
-                "-IF:\\Program\\ProMaker\\CCPP\\Compiler\\mingw64\\include",
-                "-IF:\\Program\\ProMaker\\CCPP\\Compiler\\mingw64\\x86_64-w64-mingw32\\include",
-                "-IF:\\Program\\ProMaker\\CCPP\\Compiler\\range\\",
-                "-IF:\\Program\\ProMaker\\CCPP\\Compiler\\3rd\\include\\",
+                // "-IF:\\Program\\ProMaker\\CCPP\\Compiler\\mingw64\\include",
+                // "-IF:\\Program\\ProMaker\\CCPP\\Compiler\\mingw64\\x86_64-w64-mingw32\\include",
+                // "-IF:\\Program\\ProMaker\\CCPP\\Compiler\\range\\",
+                // "-IF:\\Program\\ProMaker\\CCPP\\Compiler\\3rd\\include\\",
                 "-I${workspaceRoot}\\include\\",
+                "-L${workspaceRoot}\\lib\\",
+                
+                // "-ltcmalloc_minimal","-lpsapi","-D USE_TCMALLOC","-DPERFTOOLS_DLL_DECL=",
+                "-ljemallocgcc","-lmcfgthread",
+                // "-ljemallocllvm",
+                "-lpthread",
+                "-lpsapi",
+
+                "-fno-builtin-malloc",
+                "-fno-builtin-calloc",
+                "-fno-builtin-realloc",
+                "-fno-builtin-free",
                 "-o${fileDirname}\\${fileBasenameNoExtension}.exe"
                 //"${workspaceRoot}\\${fileBasename}.exe"
             ],
@@ -169,28 +179,38 @@
         {
             "label": "clangRls",
             "command": "F:\\Program\\ProMaker\\CCPP\\Compiler\\LLVM64\\bin\\clang++.exe",
+            // "command": "clang++",
             "args": [
-                "-D LEETCODE",
                 //"-g",
-                "--target=x86_64-pc-windows-gnu",
+                "--target=x86_64-w64-mingw32",
                 "${file}",
                 "-std=c++2a",
-                "-O2",
+                "-O3",
                 //"-fno-jump-tables",
                 //"-fjump-tables",
                 //"-fno-inline-functions",
                 "-Wall", // 开启额外警告
                 "-Wno-invalid-source-encoding",
                 "-Wno-unused-variable",
-                "-IF:\\Program\\ProMaker\\CCPP\\Compiler\\mingw64\\lib\\gcc\\x86_64-w64-mingw32\\7.3.0\\include\\c++",
-                "-IF:\\Program\\ProMaker\\CCPP\\Compiler\\mingw64\\lib\\gcc\\x86_64-w64-mingw32\\8.1.0\\include\\c++",
-                "-IF:\\Program\\ProMaker\\CCPP\\Compiler\\mingw64\\include",
-                "-IF:\\Program\\ProMaker\\CCPP\\Compiler\\mingw64\\x86_64-w64-mingw32\\include",
-                "-IF:\\Program\\ProMaker\\CCPP\\Compiler\\range\\",
-                "-IF:\\Program\\ProMaker\\CCPP\\Compiler\\3rd\\include\\",
+                // "-IF:\\Program\\ProMaker\\CCPP\\Compiler\\mingw64\\include",
+                // "-IF:\\Program\\ProMaker\\CCPP\\Compiler\\mingw64\\x86_64-w64-mingw32\\include",
+                // "-IF:\\Program\\ProMaker\\CCPP\\Compiler\\range\\",
+                // "-IF:\\Program\\ProMaker\\CCPP\\Compiler\\3rd\\include\\",
                 "-I${workspaceRoot}\\include\\",
+                "-L${workspaceRoot}\\lib\\",
+                
+                "-ltcmalloc_minimal","-lpsapi","-D USE_TCMALLOC","-DPERFTOOLS_DLL_DECL=",
+                // "-ljemallocgcc","-lmcfgthread",
+                // "-ljemallocllvm",
+                "-lpthread",
+                "-lpsapi",
+                "-lgc-lib",
+                
+                "-fno-builtin-malloc",
+                "-fno-builtin-calloc",
+                "-fno-builtin-realloc",
+                "-fno-builtin-free",
                 "-o${fileDirname}\\${fileBasenameNoExtension}.exe"
-                //"${workspaceRoot}\\${fileBasename}.exe"
             ],
             "group": {
                 "kind": "build",
@@ -229,7 +249,7 @@
                 //"-g",
                 "-S",
                 "-emit-llvm",
-                "--target=x86_64-pc-windows-gnu",
+                "--target=x86_64-w64-mingw32",
                 "${file}",
                 "-std=c++2a",
                 "-O3",

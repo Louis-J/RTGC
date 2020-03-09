@@ -10,8 +10,7 @@ class CorePtr;
 
 template<typename T>
 class ShellPtr {
-//private:
-// public:
+private:
     void *ance;
     CorePtr<T> *innr = nullptr;//指向的内节点，即指向的堆地址
     ShellPtr<T> *ipriv = nullptr, *inext = nullptr;//子层上一结点,下一结点
@@ -73,7 +72,7 @@ public:
         if(innr != nullptr){
             if(innr->outr == nullptr) {
                 innr->outr = this;
-                innr->LinkAnce(ance);
+                innr->LinkAnce(ance, nullptr);
             }
             else {
                 ipriv = innr->outr;
@@ -119,7 +118,7 @@ public:
         if(innr != nullptr){
             if(innr->outr == nullptr) {
                 innr->outr = this;
-                innr->LinkAnce(ance);
+                innr->LinkAnce(ance, nullptr);
             }
             else {
                 ipriv = innr->outr;
