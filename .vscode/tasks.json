@@ -13,6 +13,7 @@
                 "-std=c++2a",
                 "-Wall",    // 开启额外警告
                 "-static-libgcc",   // 静态链接
+                "-static-libstdc++",
                 "-IF:\\Program\\ProMaker\\CCPP\\Compiler\\mingw64\\lib\\gcc\\x86_64-w64-mingw32\\8.1.0\\include\\c++\\",
                 "-IF:\\Program\\ProMaker\\CCPP\\Compiler\\mingw64\\lib\\gcc\\x86_64-w64-mingw32\\7.3.0\\include\\c++\\",
                 "-IF:\\Program\\ProMaker\\CCPP\\Compiler\\range\\",
@@ -22,7 +23,7 @@
 
                 // "-ltcmalloc_minimal","-lpsapi","-D USE_TCMALLOC","-DPERFTOOLS_DLL_DECL=",
                 "-ljemallocgcc",
-                "-lgc-lib",
+                // "-lgc-lib",
                 
                 "-fno-builtin-malloc",
                 "-fno-builtin-calloc",
@@ -66,6 +67,7 @@
                 "-std=c++2a",
                 "-Wall",    // 开启额外警告
                 "-static-libgcc",   // 静态链接
+                "-static-libstdc++",
                 "-IF:\\Program\\ProMaker\\CCPP\\Compiler\\mingw64\\lib\\gcc\\x86_64-w64-mingw32\\8.1.0\\include\\c++\\",
                 "-IF:\\Program\\ProMaker\\CCPP\\Compiler\\mingw64\\lib\\gcc\\x86_64-w64-mingw32\\7.3.0\\include\\c++\\",
                 "-IF:\\Program\\ProMaker\\CCPP\\Compiler\\range\\",
@@ -75,7 +77,7 @@
 
                 // "-ltcmalloc_minimal","-lpsapi","-D USE_TCMALLOC","-DPERFTOOLS_DLL_DECL=",
                 "-ljemallocgcc",
-                "-lgc-lib",
+                // "-lgc-lib",
                 
                 "-fno-builtin-malloc",
                 "-fno-builtin-calloc",
@@ -135,10 +137,11 @@
                 "-L${workspaceRoot}\\lib\\",
                 
                 // "-ltcmalloc_minimal","-lpsapi","-D USE_TCMALLOC","-DPERFTOOLS_DLL_DECL=",
-                "-ljemallocgcc","-lmcfgthread",
+                // "-ljemallocgcc","-lmcfgthread",
                 // "-ljemallocllvm",
                 "-lpthread",
                 "-lpsapi",
+                // "-lgc-lib",
 
                 "-fno-builtin-malloc",
                 "-fno-builtin-calloc",
@@ -204,7 +207,7 @@
                 // "-ljemallocllvm",
                 "-lpthread",
                 "-lpsapi",
-                "-lgc-lib",
+                // "-lgc-lib",
                 
                 "-fno-builtin-malloc",
                 "-fno-builtin-calloc",

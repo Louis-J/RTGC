@@ -57,6 +57,7 @@ private:
         inext = nullptr;
     }
 public:
+    ShellPtr() : ance(this) {}
     ShellPtr(ShellPtr<T> &o) : ance(this) {
         innr = o.innr;
         if(innr != nullptr){
@@ -67,7 +68,17 @@ public:
                 inext->ipriv = this;
         }
     }
-    ShellPtr(CorePtr<T> *i = nullptr) : ance(this) {
+    ShellPtr(const ShellPtr<T> &o) : ance(this) {
+        innr = o.innr;
+        if(innr != nullptr){
+            ipriv = const_cast<ShellPtr<T>*>(&o);
+            inext = o.inext;
+            ipriv->inext = this;
+            if(inext != nullptr)
+                inext->ipriv = this;
+        }
+    }
+    ShellPtr(CorePtr<T> *i) : ance(this) {
         innr = i;
         if(innr != nullptr){
             if(innr->outr == nullptr) {

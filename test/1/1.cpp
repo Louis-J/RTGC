@@ -8,18 +8,15 @@ using namespace std;
 
 class T1 {
     CLASSLINK(T1, 2)
+    // this equals:
     // public:
     // inline void LinkAnce(void *n, void *o) {
-    //     if constexpr(decltype(RTGC::detail::haveLinkAnce<RTGC::ShellPtr<T1>>(0))::value) {
-    //         next.LinkAnce(n, o);
-    //         // std::cout << "l\n";
-    //     }
+    //     next.LinkAnce(n, o);
+    //     // std::cout << "l\n";
     // }
     // inline void LinkInit(void *n) {
-    //     if constexpr(decltype(RTGC::detail::haveLinkAnce<RTGC::ShellPtr<T1>>(0))::value) {
-    //         next.LinkInit(n);
-    //         // std::cout << "2\n";
-    //     }
+    //     next.LinkInit(n);
+    //     // std::cout << "2\n";
     // }
 private:
     string str;
