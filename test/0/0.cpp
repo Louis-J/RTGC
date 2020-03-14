@@ -4,7 +4,9 @@
 #include<RTGC/RTGC.hpp>
 
 class T1 {//use RTGC
+public:
     CLASSLINK(T1, 2)
+
 private:
     std::string str;
 public:

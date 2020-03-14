@@ -1,5 +1,6 @@
 //LeetCode 0025
 #include<iostream>
+#include<sstream>
 #include<vector>
 #include<tuple>
 #include<memory>
@@ -18,15 +19,15 @@ using namespace std;
 #define HAVE_DES 1
 
 struct ListNodeA {
-    static size_t memUse;
-    static size_t memUseMax;
+    static int cnsNum;
+    static int cnsNumMax;
     int val;
     ListNodeA *next;
     ListNodeA(int x) : val(x), next(NULL) {
         #if HAVE_CNS
-        memUse += sizeof(ListNodeA);
-        if(memUse >= memUseMax)
-            memUseMax = memUse;
+        cnsNum ++;
+        if(cnsNum >= cnsNumMax)
+            cnsNumMax = cnsNum;
         #endif
     }
     static ListNodeA *Create(initializer_list<int>& list) {
@@ -50,25 +51,23 @@ struct ListNodeA {
             ostr << "->" << l->next;
         return ostr;
     }
-    static size_t desNum;
     ~ListNodeA() {
         #if HAVE_DES
-        desNum++;
-        memUse -= sizeof(ListNodeA);
+        cnsNum --;
         #endif
     }
 };
 
 struct ListNodeB {
-    static size_t memUse;
-    static size_t memUseMax;
+    static int cnsNum;
+    static int cnsNumMax;
     int val;
     shared_ptr<ListNodeB> next;
     ListNodeB(int x) : val(x), next(NULL) {
         #if HAVE_CNS
-        memUse += sizeof(ListNodeB);
-        if(memUse >= memUseMax)
-            memUseMax = memUse;
+        cnsNum ++;
+        if(cnsNum >= cnsNumMax)
+            cnsNumMax = cnsNum;
         #endif
     }
     static shared_ptr<ListNodeB> Create(initializer_list<int>& list) {
@@ -92,29 +91,36 @@ struct ListNodeB {
             ostr << "->" << l->next;
         return ostr;
     }
-    static size_t desNum;
     ~ListNodeB() {
         #if HAVE_DES
-        desNum++;
-        memUse -= sizeof(ListNodeB);
+        cnsNum --;
         #endif
     }
 };
 
 struct ListNodeC {
-    static size_t memUse;
-    static size_t memUseMax;
+    static int cnsNum;
+    static int cnsNumMax;
     CLASSLINK(ListNodeC, 2)
     int val;
     RTGC::ShellPtr<ListNodeC> next;
     ListNodeC(int x) : val(x), next(NULL) {
         #if HAVE_CNS
-        memUse += sizeof(ListNodeC);
-        if(memUse >= memUseMax)
-            memUseMax = memUse;
+        cnsNum ++;
+        if(cnsNum >= cnsNumMax)
+            cnsNumMax = cnsNum;
         #endif
     }
     static RTGC::ShellPtr<ListNodeC> Create(initializer_list<int>& list) {
+        RTGC::ShellPtr<ListNodeC> head(new RTGC::CorePtr<ListNodeC>(0));
+        RTGC::ShellPtr<ListNodeC> next(head);
+        for(auto& i : list){
+            next->next = new RTGC::CorePtr<ListNodeC>(i);
+            next = next->next;
+        }
+        return head->next;
+    }
+    static RTGC::ShellPtr<ListNodeC> Create(initializer_list<int>&& list) {
         RTGC::ShellPtr<ListNodeC> head(new RTGC::CorePtr<ListNodeC>(0));
         RTGC::ShellPtr<ListNodeC> next(head);
         for(auto& i : list){
@@ -135,11 +141,9 @@ struct ListNodeC {
             ostr << "->" << l->next;
         return ostr;
     }
-    static size_t desNum;
     ~ListNodeC() {
         #if HAVE_DES
-        desNum++;
-        memUse -= sizeof(ListNodeC);
+        cnsNum --;
         #endif
     }
 };
@@ -196,19 +200,16 @@ ostream& operator<<(ostream& ostr, vector<T>&& v) {
     return ostr << "}";
 }
 
-size_t ListNodeA::desNum = 0;
-size_t ListNodeB::desNum = 0;
-size_t ListNodeC::desNum = 0;
+int ListNodeA::cnsNum = 0;
+int ListNodeB::cnsNum = 0;
+int ListNodeC::cnsNum = 0;
 
-size_t ListNodeA::memUse = 0;
-size_t ListNodeB::memUse = 0;
-size_t ListNodeC::memUse = 0;
+int ListNodeA::cnsNumMax = 0;
+int ListNodeB::cnsNumMax = 0;
+int ListNodeC::cnsNumMax = 0;
 
-size_t ListNodeA::memUseMax = 0;
-size_t ListNodeB::memUseMax = 0;
-size_t ListNodeC::memUseMax = 0;
 
-#define LOOPSIZE 2000000
+#define LOOPSIZE 200000
 int main() {
     vector<tuple<initializer_list<int>, int>> exams = {
         {{1,2,3,4,5}, 2},
@@ -284,18 +285,16 @@ int main() {
     cout << "Destruct Number:" << endl;
     {
         cout << "1: " << endl;
-        cout << ListNodeA::desNum << endl;
-        cout << ListNodeA::memUse << endl;
-        cout << ListNodeA::memUseMax << endl;
+        cout << ListNodeA::cnsNum << endl;
+        cout << ListNodeA::cnsNumMax << endl;
         cout << "2: " << endl;
-        cout << ListNodeB::desNum << endl;
-        cout << ListNodeB::memUse << endl;
-        cout << ListNodeB::memUseMax << endl;
+        cout << ListNodeB::cnsNum << endl;
+        cout << ListNodeB::cnsNumMax << endl;
         cout << "3: " << endl;
-        cout << ListNodeC::desNum << endl;
-        cout << ListNodeC::memUse << endl;
-        cout << ListNodeC::memUseMax << endl;
+        cout << ListNodeC::cnsNum << endl;
+        cout << ListNodeC::cnsNumMax << endl;
         cout << endl;
     }
+    return 0;
 }
 

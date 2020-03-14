@@ -7,17 +7,8 @@ using namespace std;
 
 
 class T1 {
+public:
     CLASSLINK(T1, 2)
-    // this equals:
-    // public:
-    // inline void LinkAnce(void *n, void *o) {
-    //     next.LinkAnce(n, o);
-    //     // std::cout << "l\n";
-    // }
-    // inline void LinkInit(void *n) {
-    //     next.LinkInit(n);
-    //     // std::cout << "2\n";
-    // }
 private:
     string str;
 public:

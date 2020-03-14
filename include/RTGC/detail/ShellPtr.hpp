@@ -10,55 +10,50 @@ class CorePtr;
 
 template<typename T>
 class ShellPtr {
+    friend class CorePtr<T>;
 private:
-    void *ance;
+    bool valid = true;
     CorePtr<T> *innr = nullptr;//指向的内节点，即指向的堆地址
     ShellPtr<T> *ipriv = nullptr, *inext = nullptr;//子层上一结点,下一结点
     
-    //转移所有权
-    bool SwitchL() {
+    void Erase() {
         if(ipriv != nullptr) {
-            if(ipriv->ance == ance) {
-                return ipriv->SwitchL();
-            } else {
-                innr->LinkAnce(ipriv->ance, ance);
-                innr->outr = ipriv;
-                return true;
-            }
-        }
-        return false;
-    }
-    bool SwitchR() {
-        if(inext != nullptr) {
-            if(inext->ance == ance) {
-                return inext->SwitchR();
-            } else {
-                innr->outr = inext;
-                innr->LinkAnce(inext->ance, ance);
-                return true;
-            }
-        }
-        return false;
-    }
-    //判断是否删除内层
-    void DelIn() {
-        if (innr != nullptr) {
-            if (innr->outr == this) {
-                if(!SwitchL() && !SwitchR())
-                    delete innr;
-            }
-        }
-        if(ipriv != nullptr)
             ipriv->inext = inext;
-        if(inext != nullptr)
+        }
+        if(inext != nullptr) {
             inext->ipriv = ipriv;
-        innr = nullptr;
+        }
         ipriv = nullptr;
         inext = nullptr;
     }
+    //判断是否删除内层
+    void DelIn() {
+        if(valid) {
+            Invalidate();
+            if(innr != nullptr) {
+                if(innr->outr == this) {
+                    innr->TryValidate();
+                    Erase();
+                    if(innr->outr == this && !innr->valid)
+                        delete innr;
+                    innr = nullptr;
+                } else {
+                    Erase();
+                    innr = nullptr;
+                }
+            }
+            valid = true;
+        } else {
+            Erase();
+            if(innr != nullptr && innr->outr == this)
+                delete innr;
+            innr = nullptr;
+            valid = true;
+        }
+    }
 public:
-    ShellPtr() : ance(this) {}
-    ShellPtr(ShellPtr<T> &o) : ance(this) {
+    ShellPtr() {}
+    ShellPtr(ShellPtr<T> &o) {
         innr = o.innr;
         if(innr != nullptr){
             ipriv = &o;
@@ -68,22 +63,22 @@ public:
                 inext->ipriv = this;
         }
     }
-    ShellPtr(const ShellPtr<T> &o) : ance(this) {
+    ShellPtr(const ShellPtr<T> &o) {
         innr = o.innr;
         if(innr != nullptr){
             ipriv = const_cast<ShellPtr<T>*>(&o);
             inext = o.inext;
-            ipriv->inext = this;
+            o.inext = this;
             if(inext != nullptr)
                 inext->ipriv = this;
         }
     }
-    ShellPtr(CorePtr<T> *i) : ance(this) {
+    ShellPtr(CorePtr<T> *i) {
         innr = i;
         if(innr != nullptr){
             if(innr->outr == nullptr) {
                 innr->outr = this;
-                innr->LinkAnce(ance, nullptr);
+                // innr->LinkAnce(ance, nullptr);
             }
             else {
                 ipriv = innr->outr;
@@ -129,7 +124,6 @@ public:
         if(innr != nullptr){
             if(innr->outr == nullptr) {
                 innr->outr = this;
-                innr->LinkAnce(ance, nullptr);
             }
             else {
                 ipriv = innr->outr;
@@ -142,17 +136,21 @@ public:
         return *this;
     }
 
-    void LinkInit(void *n) {
-        void *o = ance;
-        ance = n;
-        if(innr != nullptr)
-            innr->LinkAnce(n, o);
+    void Invalidate() {
+        if(valid) {
+            valid = false;
+            if(innr != nullptr && innr->outr == this)
+                innr->Invalidate();
+        }
     }
-    void LinkAnce(void *n, void *o) {
-        if(ance == o) {
-            ance = n;
-            if(innr != nullptr)
-                innr->LinkAnce(n, o);
+    void TryValidate(bool &pValid) {
+        if(!pValid) {
+            if(innr != nullptr && innr->outr == this)
+                innr->TryValidate();
+        } else {
+            this->valid = true;
+            if(innr != nullptr && !innr->valid)
+                innr->TryValidate();
         }
     }
 

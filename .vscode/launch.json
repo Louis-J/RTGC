@@ -25,7 +25,7 @@
             ]
         },
         {
-            "name": "lldb2",
+            "name": "lldb",
             "type": "lldb",
             "request": "launch",
             "program": "${fileDirname}\\${fileBasenameNoExtension}.exe",

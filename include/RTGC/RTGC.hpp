@@ -21,14 +21,13 @@ using ShellPtr = detail::ShellPtr<T>;
 #define CLASSLINK(cName, mNum)                                                                                  \
 using thisT = cName;                                                                                            \
 friend struct RTGC::detail::toTuple<thisT>;                                                                     \
-public:                                                                                                         \
-constexpr inline void LinkAnce(void *n, void *o) {                                                              \
-    auto &&tieTuple = RTGC::detail::toTuple<thisT>::tie_as_tuple(*this, RTGC::detail::const_size_t<mNum>());    \
-    RTGC::detail::MakeLinkAnce(n, o, tieTuple);                                                                 \
+constexpr inline void Invalidate() {                                                                            \
+    auto &&tieTuple = RTGC::detail::toTuple<thisT>::tie_as_tuple(*this, RTGC::detail::const_size_t<2>());       \
+    RTGC::detail::MakeInvalidate(tieTuple);                                                                     \
 }                                                                                                               \
-constexpr inline void LinkInit(void *n) {                                                                       \
-    auto &&tieTuple = RTGC::detail::toTuple<thisT>::tie_as_tuple(*this, RTGC::detail::const_size_t<mNum>());    \
-    RTGC::detail::MakeLinkInit(n, tieTuple);                                                                    \
+constexpr inline void TryValidate(bool &valid) {                                                                \
+    auto &&tieTuple = RTGC::detail::toTuple<thisT>::tie_as_tuple(*this, RTGC::detail::const_size_t<2>());       \
+    RTGC::detail::MakeTryValidate(valid, tieTuple);                                                             \
 }
 
 #endif

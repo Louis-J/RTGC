@@ -4,53 +4,78 @@
 namespace RTGC { namespace detail {
 
 template<typename U, typename... Args>
-auto haveLinkAnce(int) -> decltype(std::declval<U>().LinkAnce(nullptr, nullptr), std::true_type());
+auto haveInvalidate(int) -> decltype(std::declval<U>().Invalidate(), std::true_type());
 
 template<typename U>
-std::false_type haveLinkAnce(...);
+std::false_type haveInvalidate(...);
+
+
+template<class MB>
+constexpr void MakeInvalidateOne(MB &mb) {
+    if constexpr(decltype(haveInvalidate<MB>(0))::value) {
+        mb.Invalidate();
+    }
+}
+
+template<class Tuple, std::size_t... Is>
+constexpr void MakeInvalidateImpl(const Tuple& t, std::index_sequence<Is...>) {
+    (MakeInvalidateOne(std::get<Is>(t)), ...);
+}
+
+template<class... Args>
+constexpr void MakeInvalidate(const std::tuple<Args...>& t)
+{
+    MakeInvalidateImpl(t, std::index_sequence_for<Args...>{});
+}
+
+
+// template<typename U, typename... Args>
+// auto LeafNode(int) -> decltype(std::declval<U>::LeafNode());
+
+// template<typename U>
+// std::false_type LeafNode(...);
+
+// template<class MB>
+// constexpr auto CheckLeafNodeOne(MB &mb) -> LeafNode<MB>::LeafNode() {}
+
+// template<class Tuple, std::size_t... Is>
+// constexpr auto CheckLeafNodeImpl(const Tuple& t, std::index_sequence<Is...>) {
+//     return (CheckLeafNodeOne(std::get<Is>(t)), ...);
+// }
+
+// template<class... Args>
+// constexpr auto CheckLeafNode(const std::tuple<Args...>& t)
+// {
+//     CheckLeafNodeImpl(t, n, o, std::index_sequence_for<Args...>{});
+// }
+
+
 
 template<typename U, typename... Args>
-auto haveLinkInit(int) -> decltype(std::declval<U>().LinkInit(nullptr), std::true_type());
+auto haveTryValidate(bool tmp) -> decltype(std::declval<U>().TryValidate(tmp), std::true_type());
 
 template<typename U>
-std::false_type haveLinkInit(...);
+std::false_type haveTryValidate(...);
 
 template<class MB>
-constexpr void MakeLinkInitOne(MB &mb, void *n) {
-    if constexpr(isShellPtr<MB>::value) {
-        mb.LinkInit(n);
+constexpr void MakeTryValidateOne(MB &mb, bool &valid) {
+    if constexpr(decltype(haveTryValidate<MB>(0))::value) {
+        mb.TryValidate(valid);
     }
 }
 
 template<class Tuple, std::size_t... Is>
-constexpr void MakeLinkInitImpl(const Tuple& t, void *n, std::index_sequence<Is...>) {
-    (MakeLinkInitOne(std::get<Is>(t), n), ...);
+constexpr void MakeTryValidateImpl(const Tuple& t, bool &valid, std::index_sequence<Is...>) {
+    (MakeTryValidateOne(std::get<Is>(t), valid), ...);
 }
 
 template<class... Args>
-constexpr void MakeLinkInit(void *n, const std::tuple<Args...>& t)
+constexpr void MakeTryValidate(bool &valid, const std::tuple<Args...>& t)
 {
-    MakeLinkInitImpl(t, n, std::index_sequence_for<Args...>{});
+    MakeTryValidateImpl(t, valid, std::index_sequence_for<Args...>{});
 }
 
 
-template<class MB>
-constexpr void MakeLinkAnceOne(MB &mb, void *n, void *o) {
-    if constexpr(decltype(haveLinkAnce<MB>(0))::value) {
-        mb.LinkAnce(n, o);
-    }
-}
-
-template<class Tuple, std::size_t... Is>
-constexpr void MakeLinkAnceImpl(const Tuple& t, void *n, void *o, std::index_sequence<Is...>) {
-    (MakeLinkAnceOne(std::get<Is>(t), n, o), ...);
-}
-
-template<class... Args>
-constexpr void MakeLinkAnce(void *n, void *o, const std::tuple<Args...>& t)
-{
-    MakeLinkAnceImpl(t, n, o, std::index_sequence_for<Args...>{});
-}
 
 }}
 
