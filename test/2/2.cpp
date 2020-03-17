@@ -142,10 +142,10 @@ void T2B::print(void *ance = nullptr) {
 int main() {
     cout << "Test1" << endl;
     {
-        RTGC::ShellPtr<T1A> a1(new RTGC::CorePtr<T1A>("a1"));
-        RTGC::ShellPtr<T1A> a2(new RTGC::CorePtr<T1A>("a2"));
-        a1->next = new RTGC::CorePtr<T1B>("b1");
-        a2->next = new RTGC::CorePtr<T1B>("b2");
+        RTGC::ShellPtr<T1A> a1(RTGC::MakeShell<T1A>("a1"));
+        RTGC::ShellPtr<T1A> a2(RTGC::MakeShell<T1A>("a2"));
+        a1->next = RTGC::MakeShell<T1B>("b1");
+        a2->next = RTGC::MakeShell<T1B>("b2");
         a1->next->next = a2;
         a2->next->next = a1;
         a1->print();
@@ -153,8 +153,8 @@ int main() {
     }
     cout << "Test2" << endl;
     {
-        RTGC::ShellPtr<T2A> a1(new RTGC::CorePtr<T2A>("a1", "b1"));
-        RTGC::ShellPtr<T2A> a2(new RTGC::CorePtr<T2A>("a2", "b2"));
+        RTGC::ShellPtr<T2A> a1(RTGC::MakeShell<T2A>("a1", "b1"));
+        RTGC::ShellPtr<T2A> a2(RTGC::MakeShell<T2A>("a2", "b2"));
         a1->next.next = a2;
         a2->next.next = a1;
         a1->print();

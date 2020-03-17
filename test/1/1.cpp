@@ -54,9 +54,9 @@ public:
 int main() {
     cout << "Test1" << endl;
     {
-        RTGC::ShellPtr<T1> t1a(new RTGC::CorePtr<T1>("t1"));
+        RTGC::ShellPtr<T1> t1a(RTGC::MakeShell<T1>("t1"));
         RTGC::ShellPtr<T1> t1b(t1a);
-        RTGC::ShellPtr<T1> t2 = new RTGC::CorePtr<T1>("t2");
+        RTGC::ShellPtr<T1> t2 = RTGC::MakeShell<T1>("t2");
         t1a->next = t2;
         t2->next = t1a;
         cout << "t1a : " <<  *t1a << endl;

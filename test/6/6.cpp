@@ -6,20 +6,22 @@
 #include<mutex>
 
 using namespace std;
+using namespace RTGC;
 class T1 {
+public:
     CLASSLINK(T1, 1)
     static size_t cnsNum;
     static size_t desNum;
 public:
-    RTGC::ShellPtr<T1> next;
+    ShellPtr<T1> next;
     T1() {
         cnsNum++;
-        // std::cout << "construct\n";
+        std::cout << "construct\n";
     }
     
     ~T1() {
         desNum++;
-        // std::cout << "destruct\n";
+        std::cout << "destruct\n";
     }
 };
 size_t T1::cnsNum = 0;
@@ -31,28 +33,28 @@ mutex gInit;
 mutex gInitFinish;
 int gnitNum;
 
-RTGC::ShellPtr<T1> gPtr;
+ShellPtr<T1> gPtr;
 int ThreadProc() {
     gInit.lock();
-    vector<RTGC::ShellPtr<T1>> arr(100, gPtr);
+    vector<ShellPtr<T1>> arr(100, gPtr);
     if(++gnitNum == 4) {
         gInitFinish.unlock();
     }
     gInit.unlock();
 
     gSync.lock();
-    gSync.unlock();
+    // gSync.unlock();
     for (auto &i : arr) {
         i = nullptr;
     }
-    // gSync.unlock();
+    gSync.unlock();
     return 0;
 }
 
 int main() {
     gInitFinish.lock();
     for (int i = 0; i < 1000; i++) {
-        gPtr = new RTGC::CorePtr<T1>{};
+        gPtr = MakeShell<T1>();
 
         gnitNum = 0;
         gSync.lock();

@@ -14,6 +14,7 @@
                 "-Wall",    // 开启额外警告
                 "-static-libgcc",   // 静态链接
                 "-static-libstdc++",
+                "-lmcfgthread333",
                 "-IF:\\Program\\ProMaker\\CCPP\\Compiler\\mingw64\\lib\\gcc\\x86_64-w64-mingw32\\8.1.0\\include\\c++\\",
                 "-IF:\\Program\\ProMaker\\CCPP\\Compiler\\mingw64\\lib\\gcc\\x86_64-w64-mingw32\\7.3.0\\include\\c++\\",
                 "-IF:\\Program\\ProMaker\\CCPP\\Compiler\\range\\",
@@ -138,7 +139,7 @@
                 
                 // "-ltcmalloc_minimal","-lpsapi","-D USE_TCMALLOC","-DPERFTOOLS_DLL_DECL=",
                 // "-ljemallocgcc","-lmcfgthread",
-                // "-ljemallocllvm",
+                "-ljemallocllvm",
                 "-lpthread",
                 "-lpsapi",
                 // "-lgc-lib",
@@ -202,9 +203,9 @@
                 "-I${workspaceRoot}\\include\\",
                 "-L${workspaceRoot}\\lib\\",
                 
-                "-ltcmalloc_minimal","-lpsapi","-D USE_TCMALLOC","-DPERFTOOLS_DLL_DECL=",
+                // "-ltcmalloc_minimal","-lpsapi","-D USE_TCMALLOC","-DPERFTOOLS_DLL_DECL=",
                 // "-ljemallocgcc","-lmcfgthread",
-                // "-ljemallocllvm",
+                "-ljemallocllvm",
                 "-lpthread",
                 "-lpsapi",
                 // "-lgc-lib",

@@ -13,6 +13,9 @@ template<typename T>
 class CorePtr {
     friend class ShellPtr<T>;
     
+    template<typename Tp, typename... _Args>
+    friend ShellPtr<Tp> MakeShell(_Args&&... __args);
+    
     bool valid = true;
     ShellPtr<T> *outr = nullptr;//所有者结点
     T real;
@@ -46,7 +49,6 @@ class CorePtr {
             real.TryValidate(valid);
         }
     }
-public:
     template<class... Args>
     CorePtr(Args&&... args) :real(std::forward<Args>(args)...) {}
 };

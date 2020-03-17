@@ -1,6 +1,5 @@
 //LeetCode 0025
 #include<iostream>
-#include<sstream>
 #include<vector>
 #include<tuple>
 #include<memory>
@@ -14,13 +13,19 @@ void * makeTCMallocUsed = tc_malloc(4);
 #endif
 
 using namespace std;
+using namespace RTGC;
 
 #define HAVE_CNS 1
 #define HAVE_DES 1
 
 struct ListNodeA {
-    static int cnsNum;
-    static int cnsNumMax;
+    using TPtr = ListNodeA*;
+    static auto Alloc(int val) {
+        return new ListNodeA(val);
+    }
+
+    static size_t cnsNum;
+    static size_t cnsNumMax;
     int val;
     ListNodeA *next;
     ListNodeA(int x) : val(x), next(NULL) {
@@ -59,8 +64,13 @@ struct ListNodeA {
 };
 
 struct ListNodeB {
-    static int cnsNum;
-    static int cnsNumMax;
+    using TPtr = shared_ptr<ListNodeB>;
+    static auto Alloc(int val) {
+        return make_shared<ListNodeB>(val);
+    }
+
+    static size_t cnsNum;
+    static size_t cnsNumMax;
     int val;
     shared_ptr<ListNodeB> next;
     ListNodeB(int x) : val(x), next(NULL) {
@@ -71,10 +81,10 @@ struct ListNodeB {
         #endif
     }
     static shared_ptr<ListNodeB> Create(initializer_list<int>& list) {
-        shared_ptr<ListNodeB> head(new ListNodeB(0));
+        shared_ptr<ListNodeB> head = make_shared<ListNodeB>(0);
         shared_ptr<ListNodeB> next(head);
         for(auto& i : list){
-            next->next.reset(new ListNodeB(i));
+            next->next = make_shared<ListNodeB>(i);
             next = next->next;
         }
         return head->next;
@@ -99,11 +109,16 @@ struct ListNodeB {
 };
 
 struct ListNodeC {
-    static int cnsNum;
-    static int cnsNumMax;
+    using TPtr = ShellPtr<ListNodeC>;
+    static auto Alloc(int val) {
+        return MakeShell<ListNodeC>(val);
+    }
+
+    static size_t cnsNum;
+    static size_t cnsNumMax;
     CLASSLINK(ListNodeC, 2)
     int val;
-    RTGC::ShellPtr<ListNodeC> next;
+    ShellPtr<ListNodeC> next;
     ListNodeC(int x) : val(x), next(NULL) {
         #if HAVE_CNS
         cnsNum ++;
@@ -111,31 +126,22 @@ struct ListNodeC {
             cnsNumMax = cnsNum;
         #endif
     }
-    static RTGC::ShellPtr<ListNodeC> Create(initializer_list<int>& list) {
-        RTGC::ShellPtr<ListNodeC> head(new RTGC::CorePtr<ListNodeC>(0));
-        RTGC::ShellPtr<ListNodeC> next(head);
+    static ShellPtr<ListNodeC> Create(initializer_list<int>& list) {
+        ShellPtr<ListNodeC> head(MakeShell<ListNodeC>(0));
+        ShellPtr<ListNodeC> next(head);
         for(auto& i : list){
-            next->next = new RTGC::CorePtr<ListNodeC>(i);
+            next->next = MakeShell<ListNodeC>(i);
             next = next->next;
         }
         return head->next;
     }
-    static RTGC::ShellPtr<ListNodeC> Create(initializer_list<int>&& list) {
-        RTGC::ShellPtr<ListNodeC> head(new RTGC::CorePtr<ListNodeC>(0));
-        RTGC::ShellPtr<ListNodeC> next(head);
-        for(auto& i : list){
-            next->next = new RTGC::CorePtr<ListNodeC>(i);
-            next = next->next;
-        }
-        return head->next;
-    }
-    friend ostream& operator<<(ostream& ostr, RTGC::ShellPtr<ListNodeC>& l) {
+    friend ostream& operator<<(ostream& ostr, ShellPtr<ListNodeC>& l) {
         ostr << l->val;
         if(l->next != nullptr)
             ostr << "->" << l->next;
         return ostr;
     }
-    friend ostream& operator<<(ostream& ostr, RTGC::ShellPtr<ListNodeC>&& l) {
+    friend ostream& operator<<(ostream& ostr, ShellPtr<ListNodeC>&& l) {
         ostr << l->val;
         if(l->next != nullptr)
             ostr << "->" << l->next;
@@ -148,15 +154,16 @@ struct ListNodeC {
     }
 };
 
-template<typename TNode, typename TPtr>
+template<typename T>
 class Solution {
+    using TPtr = typename T::TPtr;
 public:
     TPtr reverseKGroup(TPtr head, int k) {
         if(k <= 1){
             return head;
         }
         //带头指针
-        TPtr oldhead(new TNode(0));
+        TPtr oldhead(T::Alloc(0));
         oldhead->next = head;
         //算出长度
         int n = 0;
@@ -164,7 +171,7 @@ public:
             n++;
         }
         //新头指针
-        TPtr newhead(new TNode(0));
+        TPtr newhead(T::Alloc(0));
         TPtr newtail = newhead;
         //转换
         for(int i = 0; i < n/k; i++) {
@@ -200,13 +207,13 @@ ostream& operator<<(ostream& ostr, vector<T>&& v) {
     return ostr << "}";
 }
 
-int ListNodeA::cnsNum = 0;
-int ListNodeB::cnsNum = 0;
-int ListNodeC::cnsNum = 0;
+size_t ListNodeA::cnsNum = 0;
+size_t ListNodeB::cnsNum = 0;
+size_t ListNodeC::cnsNum = 0;
 
-int ListNodeA::cnsNumMax = 0;
-int ListNodeB::cnsNumMax = 0;
-int ListNodeC::cnsNumMax = 0;
+size_t ListNodeA::cnsNumMax = 0;
+size_t ListNodeB::cnsNumMax = 0;
+size_t ListNodeC::cnsNumMax = 0;
 
 
 #define LOOPSIZE 200000
@@ -226,9 +233,9 @@ int main() {
     {
         for (auto &[list, k] : exams) {
             cout << "list: " << vector<int>(list) << endl << "k: "<< k << endl;
-            cout << "1: " << Solution<ListNodeA, ListNodeA*>().reverseKGroup(ListNodeA::Create(list), k) << endl;
-            cout << "2: " << Solution<ListNodeB, shared_ptr<ListNodeB>>().reverseKGroup(ListNodeB::Create(list), k) << endl;
-            cout << "3: " << Solution<RTGC::CorePtr<ListNodeC>, RTGC::ShellPtr<ListNodeC>>().reverseKGroup(ListNodeC::Create(list), k) << endl;
+            cout << "1: " << Solution<ListNodeA>().reverseKGroup(ListNodeA::Create(list), k) << endl;
+            cout << "2: " << Solution<ListNodeB>().reverseKGroup(ListNodeB::Create(list), k) << endl;
+            cout << "3: " << Solution<ListNodeC>().reverseKGroup(ListNodeC::Create(list), k) << endl;
             cout << endl;
         }
     }
@@ -241,12 +248,12 @@ int main() {
         for (int i = 0; i < LOOPSIZE; i++) {
             for (auto &[list, k] : exams) {
                 // auto ret = ListNodeA::Create(list);
-                auto ret = Solution<ListNodeA, ListNodeA*>().reverseKGroup(ListNodeA::Create(list), k);
+                auto ret = Solution<ListNodeA>().reverseKGroup(ListNodeA::Create(list), k);
             }
         }
         const uint32_t timeBy = timeBegin.elapsed() * 1000;
-        cout << "time1:" << timeBy << "ms" << endl;
-        cout << "memory use1:" << getCurrentRSS() - memUse << endl;
+        cout << "time:" << timeBy << "ms" << endl;
+        cout << "memory use:" << getCurrentRSS() - memUse << endl;
     }
     cout << endl << "Press any key:";
     cin.get();
@@ -257,12 +264,12 @@ int main() {
         for (int i = 0; i < LOOPSIZE; i++) {
             for (auto &[list, k] : exams) {
                 // auto ret = ListNodeB::Create(list);
-                auto ret = Solution<ListNodeB, shared_ptr<ListNodeB>>().reverseKGroup(ListNodeB::Create(list), k);
+                auto ret = Solution<ListNodeB>().reverseKGroup(ListNodeB::Create(list), k);
             }
         }
         const uint32_t timeBy = timeBegin.elapsed() * 1000;
-        cout << "time2:" << timeBy << "ms" << endl;
-        cout << "memory use2:" << getCurrentRSS() - memUse << endl;
+        cout << "time:" << timeBy << "ms" << endl;
+        cout << "memory use:" << getCurrentRSS() - memUse << endl;
     }
     cout << endl << "Press any key:";
     cin.get();
@@ -273,16 +280,16 @@ int main() {
         for (int i = 0; i < LOOPSIZE; i++) {
             for (auto &[list, k] : exams) {
                 // auto ret = ListNodeC::Create(list);
-                auto ret = Solution<RTGC::CorePtr<ListNodeC>, RTGC::ShellPtr<ListNodeC>>().reverseKGroup(ListNodeC::Create(list), k);
+                auto ret = Solution<ListNodeC>().reverseKGroup(ListNodeC::Create(list), k);
             }
         }
         const uint32_t timeBy = timeBegin.elapsed() * 1000;
-        cout << "time3:" << timeBy << "ms" << endl;
-        cout << "memory use3:" << getCurrentRSS() - memUse << endl;
+        cout << "time:" << timeBy << "ms" << endl;
+        cout << "memory use:" << getCurrentRSS() - memUse << endl;
     }
     cout << endl << "Press any key:";
     cin.get();
-    cout << "Destruct Number:" << endl;
+    cout << "Construct Number:" << endl;
     {
         cout << "1: " << endl;
         cout << ListNodeA::cnsNum << endl;
@@ -295,6 +302,5 @@ int main() {
         cout << ListNodeC::cnsNumMax << endl;
         cout << endl;
     }
-    return 0;
 }
 

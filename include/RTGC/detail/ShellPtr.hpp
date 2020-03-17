@@ -68,7 +68,7 @@ public:
         if(innr != nullptr){
             ipriv = const_cast<ShellPtr<T>*>(&o);
             inext = o.inext;
-            o.inext = this;
+            const_cast<ShellPtr<T>*>(&o)->inext = this;
             if(inext != nullptr)
                 inext->ipriv = this;
         }
@@ -187,6 +187,13 @@ struct isShellPtr : public std::false_type {};
 
 template<typename V>
 struct isShellPtr<ShellPtr<V>> : public std::true_type {};
+
+
+template<typename T, typename... _Args>
+inline ShellPtr<T> MakeShell(_Args&&... __args) {
+    return ShellPtr<T>(new CorePtr<T>(std::forward<_Args>(__args)...));
+}
+
 
 }}
 
