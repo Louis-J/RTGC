@@ -40,7 +40,7 @@
                 "echo": true,
                 "reveal": "always",
                 "focus": false,
-                "panel": "new",
+                "panel": "new"
                 //"reveal": "silent"
             },
             "problemMatcher": {
@@ -205,9 +205,9 @@
                 
                 // "-ltcmalloc_minimal","-lpsapi","-D USE_TCMALLOC","-DPERFTOOLS_DLL_DECL=",
                 // "-ljemallocgcc","-lmcfgthread",
-                "-ljemallocllvm",
+                // "-ljemallocllvm",
                 "-lpthread",
-                "-lpsapi",
+                // "-lpsapi",
                 // "-lgc-lib",
                 
                 "-fno-builtin-malloc",

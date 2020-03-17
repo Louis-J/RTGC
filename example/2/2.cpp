@@ -7,6 +7,7 @@
 
 using namespace std;
 using namespace RTGC;
+
 class T1 {
 public:
     CLASSLINK(T1, 1)
@@ -16,12 +17,12 @@ public:
     ShellPtr<T1> next;
     T1() {
         cnsNum++;
-        std::cout << "construct\n";
+        cout << "construct\n";
     }
     
     ~T1() {
         desNum++;
-        std::cout << "destruct\n";
+        cout << "destruct\n";
     }
 };
 size_t T1::cnsNum = 0;
@@ -43,11 +44,11 @@ int ThreadProc() {
     gInit.unlock();
 
     gSync.lock();
-    // gSync.unlock();
+    gSync.unlock();
     for (auto &i : arr) {
         i = nullptr;
     }
-    gSync.unlock();
+    // gSync.unlock();
     return 0;
 }
 

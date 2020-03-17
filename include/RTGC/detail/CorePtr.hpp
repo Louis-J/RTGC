@@ -1,7 +1,8 @@
 #ifndef RTGC_DETAIL_COREPTR_HPP
 #define RTGC_DETAIL_COREPTR_HPP
 
-#include <cstddef>
+#include<cstddef>
+#include<atomic>
 
 namespace RTGC { namespace detail {
 
@@ -16,9 +17,10 @@ class CorePtr {
     template<typename Tp, typename... _Args>
     friend ShellPtr<Tp> MakeShell(_Args&&... __args);
     
-    bool valid = true;
-    ShellPtr<T> *outr = nullptr;//所有者结点
     T real;
+    bool valid = true;
+    std::atomic_flag mut = ATOMIC_FLAG_INIT;
+    ShellPtr<T> *outr = nullptr;//所有者结点
     void Invalidate() {
         if(valid) {
             valid = false;

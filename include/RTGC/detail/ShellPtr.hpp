@@ -2,6 +2,7 @@
 #define RTGC_DETAIL_SHELLPTR_HPP
 
 #include<cstddef>
+#include<atomic>
 
 namespace RTGC { namespace detail {
 
@@ -13,6 +14,7 @@ class ShellPtr {
     friend class CorePtr<T>;
 private:
     bool valid = true;
+    std::atomic_flag mut = ATOMIC_FLAG_INIT;
     CorePtr<T> *innr = nullptr;//指向的内节点，即指向的堆地址
     ShellPtr<T> *ipriv = nullptr, *inext = nullptr;//子层上一结点,下一结点
     

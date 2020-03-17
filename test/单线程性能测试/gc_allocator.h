@@ -75,7 +75,7 @@
 #if defined(GC_NEW_ABORTS_ON_OOM) || defined(_LIBCPP_NO_EXCEPTIONS)
 # define GC_ALLOCATOR_THROW_OR_ABORT() GC_abort_on_oom()
 #else
-# define GC_ALLOCATOR_THROW_OR_ABORT() throw std::bad_alloc()
+# define GC_ALLOCATOR_THROW_OR_ABORT() throw bad_alloc()
 #endif
 
 /* First some helpers to allow us to dispatch on whether or not a type
