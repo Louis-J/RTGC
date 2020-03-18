@@ -6,10 +6,6 @@
 #include<RTGC/RTGC.hpp>
 #include"memUse.hpp"
 #include<boost/timer.hpp>
-#include"gc_cpp.h"
-#include"gc_allocator.h"
-// #include "gc.h"
-// #include "gc_disclaim.h"
 
 #ifdef USE_TCMALLOC
 #include"tcmalloc.h"
@@ -158,65 +154,6 @@ struct ListNodeC {
     }
 };
 
-struct ListNodeD : public GC_NS_QUALIFY(gc_cleanup) {
-    using TPtr = ListNodeD*;
-    static auto Alloc(int val) {
-        return new ListNodeD(val);
-    }
-    static size_t cnsNum;
-    static size_t cnsNumMax;
-    int val;
-    ListNodeD *next;
-    
-    // static void GC_CALLBACK finalize(void * obj) {
-    //     // FINALIZER_LOCK();
-    //     // FINALIZER_UNLOCK();
-    // }
-
-    // static void GC_CALLBACK finalizer(void * obj, void * client_data) {
-    //     // FINALIZER_LOCK();
-    //     // FINALIZER_UNLOCK();
-    // }
-
-    void *operator new(size_t size) {
-        auto p = GC_malloc(size);
-        return p;
-    }
-    ListNodeD(int x) : val(x), next(NULL) {
-        #if HAVE_CNS
-        cnsNum ++;
-        if(cnsNum >= cnsNumMax)
-            cnsNumMax = cnsNum;
-        #endif
-    }
-    static ListNodeD *Create(initializer_list<int>& list) {
-        ListNodeD *head(new ListNodeD(0));
-        ListNodeD *next(head);
-        for(auto& i : list){
-            next->next = new ListNodeD(i);
-            next = next->next;
-        }
-        return head->next;
-    }
-    friend ostream& operator<<(ostream& ostr, ListNodeD *& l) {
-        ostr << l->val;
-        if(l->next != nullptr)
-            ostr << "->" << l->next;
-        return ostr;
-    }
-    friend ostream& operator<<(ostream& ostr, ListNodeD *&& l) {
-        ostr << l->val;
-        if(l->next != nullptr)
-            ostr << "->" << l->next;
-        return ostr;
-    }
-    ~ListNodeD() {
-        #if HAVE_DES
-        cnsNum --;
-        #endif
-    }
-};
-
 template<typename T>
 class Solution {
     using TPtr = typename T::TPtr;
@@ -273,15 +210,13 @@ ostream& operator<<(ostream& ostr, vector<T>&& v) {
 size_t ListNodeA::cnsNum = 0;
 size_t ListNodeB::cnsNum = 0;
 size_t ListNodeC::cnsNum = 0;
-size_t ListNodeD::cnsNum = 0;
 
 size_t ListNodeA::cnsNumMax = 0;
 size_t ListNodeB::cnsNumMax = 0;
 size_t ListNodeC::cnsNumMax = 0;
-size_t ListNodeD::cnsNumMax = 0;
 
 
-#define LOOPSIZE 20000
+#define LOOPSIZE 200000
 int main() {
     vector<tuple<initializer_list<int>, int>> exams = {
         {{1,2,3,4,5}, 2},
@@ -301,7 +236,6 @@ int main() {
             cout << "1: " << Solution<ListNodeA>().reverseKGroup(ListNodeA::Create(list), k) << endl;
             cout << "2: " << Solution<ListNodeB>().reverseKGroup(ListNodeB::Create(list), k) << endl;
             cout << "3: " << Solution<ListNodeC>().reverseKGroup(ListNodeC::Create(list), k) << endl;
-            cout << "4: " << Solution<ListNodeD>().reverseKGroup(ListNodeD::Create(list), k) << endl;
             cout << endl;
         }
     }
@@ -355,29 +289,6 @@ int main() {
     }
     cout << endl << "Press any key:";
     cin.get();
-    cout << "Test4" << endl;
-    {
-        const size_t memUse = getCurrentRSS();
-        const boost::timer timeBegin;
-        GC_INIT();
-        // GC_set_await_finalize_proc(ListNodeD::finalize);
-        const uint32_t timeBy0 = timeBegin.elapsed() * 1000;
-        for (int i = 0; i < LOOPSIZE; i++) {
-            for (auto &[list, k] : exams) {
-                // auto ret = ListNodeD::Create(list);
-                auto ret = Solution<ListNodeD>().reverseKGroup(ListNodeD::Create(list), k);
-            }
-        }
-        const uint32_t timeBy1 = timeBegin.elapsed() * 1000;
-        GC_gcollect();
-        const uint32_t timeBy2 = timeBegin.elapsed() * 1000;
-        cout << "time0:" << timeBy0 << "ms" << endl;
-        cout << "time1:" << timeBy1 << "ms" << endl;
-        cout << "time2:" << timeBy2 << "ms" << endl;
-        cout << "memory use:" << getCurrentRSS() - memUse << endl;
-    }
-    cout << endl << "Press any key:";
-    cin.get();
     cout << "Construct Number:" << endl;
     {
         cout << "1: " << endl;
@@ -389,9 +300,6 @@ int main() {
         cout << "3: " << endl;
         cout << ListNodeC::cnsNum << endl;
         cout << ListNodeC::cnsNumMax << endl;
-        cout << "4: " << endl;
-        cout << ListNodeD::cnsNum << endl;
-        cout << ListNodeD::cnsNumMax << endl;
         cout << endl;
     }
 }

@@ -27,6 +27,7 @@ AUX_SOURCE_DIRECTORY(. DIR_SRCS) # 添加源代码文件夹, 自动扫描所有�
 
 
 
+link_libraries("pthread")
 add_executable(1  # 输出名为NBody的可执行文件
     ${DIR_SRCS}
 )

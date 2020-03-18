@@ -94,7 +94,7 @@
                 "echo": true,
                 "reveal": "always",
                 "focus": false,
-                "panel": "new",
+                "panel": "new"
                 //"reveal": "silent"
             },
             "problemMatcher": {
@@ -159,7 +159,7 @@
                 "echo": true,
                 "reveal": "always",
                 "focus": false,
-                "panel": "new",
+                "panel": "new"
                 //"reveal": "silent"
             },
             "problemMatcher": {
@@ -224,7 +224,7 @@
                 "echo": true,
                 "reveal": "always",
                 "focus": false,
-                "panel": "new",
+                "panel": "new"
                 //"reveal": "silent"
             },
             "problemMatcher": {
@@ -281,7 +281,7 @@
                 "echo": true,
                 "reveal": "always",
                 "focus": false,
-                "panel": "new",
+                "panel": "new"
                 //"reveal": "silent"
             },
             "problemMatcher": {

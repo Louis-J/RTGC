@@ -14,136 +14,189 @@ class ShellPtr {
     friend class CorePtr<T>;
 private:
     bool valid = true;
-    std::atomic_flag mut = ATOMIC_FLAG_INIT;
     CorePtr<T> *innr = nullptr;//指向的内节点，即指向的堆地址
     ShellPtr<T> *ipriv = nullptr, *inext = nullptr;//子层上一结点,下一结点
     
-    void Erase() {
-        if(ipriv != nullptr) {
+    void EraseMin() {
+        if(ipriv != nullptr)
             ipriv->inext = inext;
-        }
-        if(inext != nullptr) {
+        if(inext != nullptr)
             inext->ipriv = ipriv;
-        }
+    }
+    void Erase() {
+        if(ipriv != nullptr)
+            ipriv->inext = inext;
+        if(inext != nullptr)
+            inext->ipriv = ipriv;
         ipriv = nullptr;
         inext = nullptr;
     }
     //判断是否删除内层
     void DelIn() {
-        if(valid) {
-            Invalidate();
-            if(innr != nullptr) {
-                if(innr->outr == this) {
-                    innr->TryValidate();
-                    Erase();
-                    if(innr->outr == this && !innr->valid)
-                        delete innr;
-                    innr = nullptr;
-                } else {
-                    Erase();
-                    innr = nullptr;
+        if(innr != nullptr) {//主动删且有innr，此时this未上锁，innr未上锁
+            #ifdef RTGCDEBUG
+            for(auto j = 0; innr->mut.test_and_set(); j++)
+                if(j%100 == 0)
+                    std::cout << "\nstucked 0!";
+            #else
+            while(innr->mut.test_and_set()) {}
+            #endif
+            if(innr->outr == this) {//有强引用innr，需更新链
+                valid = false;
+                innr->Invalidate();
+                innr->TryValidate();
+                Erase();
+                if(innr->outr == this && !innr->valid) {//innr废弃
+                    delete innr;
+                } else {//innr更新
+                    valid = true;
+                    innr->mut.clear();
                 }
+            } else {//无强引用innr
+                Erase();
+                innr->mut.clear();
             }
-            valid = true;
-        } else {
-            Erase();
+            innr = nullptr;
+        }
+    }
+public:
+    ~ShellPtr() {
+        if(!valid) {//被动删，此时this上锁，innr上锁
+            EraseMin();
             if(innr != nullptr && innr->outr == this)
                 delete innr;
-            innr = nullptr;
-            valid = true;
+        } else if(innr != nullptr) {//主动删且有innr，此时this未上锁，innr未上锁
+            #ifdef RTGCDEBUG
+            for(auto j = 0; innr->mut.test_and_set(); j++)
+                if(j%100 == 0)
+                    std::cout << "\nstucked 1!";
+            #else
+            while(innr->mut.test_and_set()) {}
+            #endif
+            if(innr->outr == this) {//有强引用innr，需更新链
+                valid = false;
+                innr->Invalidate();
+                innr->TryValidate();
+                if(innr->outr == this && !innr->valid) {//innr废弃
+                    EraseMin();
+                    delete innr;
+                } else {//innr更新
+                    Erase();
+                    innr->mut.clear();
+                }
+            } else {//无强引用innr
+                EraseMin();
+                innr->mut.clear();
+            }
         }
+        //主动删且无innr
     }
 public:
     ShellPtr() {}
     ShellPtr(ShellPtr<T> &o) {
-        innr = o.innr;
-        if(innr != nullptr){
+        if(o.innr != nullptr) {
+            innr = o.innr;
+            #ifdef RTGCDEBUG
+            for(auto j = 0; innr->mut.test_and_set(); j++)
+                if(j%100 == 0)
+                    std::cout << "\nstucked 2!";
+            #else
+            while(innr->mut.test_and_set()) {}
+            #endif
+
             ipriv = &o;
             inext = o.inext;
             o.inext = this;
             if(inext != nullptr)
                 inext->ipriv = this;
+
+            innr->mut.clear();
         }
     }
     ShellPtr(const ShellPtr<T> &o) {
-        innr = o.innr;
-        if(innr != nullptr){
+        if(o.innr != nullptr){
+            innr = o.innr;
+            #ifdef RTGCDEBUG
+            for(auto j = 0; innr->mut.test_and_set(); j++)
+                if(j%100 == 0)
+                    std::cout << "\nstucked 3!";
+            #else
+            while(innr->mut.test_and_set()) {}
+            #endif
+
             ipriv = const_cast<ShellPtr<T>*>(&o);
             inext = o.inext;
             const_cast<ShellPtr<T>*>(&o)->inext = this;
             if(inext != nullptr)
                 inext->ipriv = this;
+
+            innr->mut.clear();
         }
     }
     ShellPtr(CorePtr<T> *i) {
-        innr = i;
-        if(innr != nullptr){
-            if(innr->outr == nullptr) {
-                innr->outr = this;
-                // innr->LinkAnce(ance, nullptr);
-            }
-            else {
-                ipriv = innr->outr;
-                inext = innr->outr->inext;
-                innr->outr->inext = this;
-                if(inext != nullptr)
-                    inext->ipriv = this;
-            }
+        if(i != nullptr){
+            innr = i;
+            innr->outr = this;
         }
     }
 
-    ~ShellPtr() {
-        DelIn();
-    }
-
     ShellPtr<T>& operator=(ShellPtr<T> &o) {
-        DelIn();
-        innr = o.innr;
-        if(innr != nullptr){
-            ipriv = &o;
-            inext = o.inext;
-            o.inext = this;
-            if(inext != nullptr)
-                inext->ipriv = this;
+        if(innr != o.innr) {
+            DelIn();
+            if(o.innr != nullptr){
+                innr = o.innr;
+                #ifdef RTGCDEBUG
+                for(auto j = 0; innr->mut.test_and_set(); j++)
+                    if(j%100 == 0)
+                        std::cout << "\nstucked 4!";
+                #else
+                while(innr->mut.test_and_set()) {}
+                #endif
+                
+                ipriv = &o;
+                inext = o.inext;
+                o.inext = this;
+                if(inext != nullptr)
+                    inext->ipriv = this;
+
+                innr->mut.clear();
+            }
         }
         return *this;
     }
     ShellPtr<T>& operator=(ShellPtr<T> &&o) {
-        DelIn();
-        innr = o.innr;
-        if(innr != nullptr){
-            ipriv = &o;
-            inext = o.inext;
-            o.inext = this;
-            if(inext != nullptr)
-                inext->ipriv = this;
+        if(innr != o.innr) {
+            DelIn();
+            if(o.innr != nullptr){
+                innr = o.innr;
+                #ifdef RTGCDEBUG
+                for(auto j = 0; innr->mut.test_and_set(); j++)
+                    if(j%100 == 0)
+                        std::cout << "\nstucked 5!";
+                #else
+                while(innr->mut.test_and_set()) {}
+                #endif
+                
+                ipriv = &o;
+                inext = o.inext;
+                o.inext = this;
+                if(inext != nullptr)
+                    inext->ipriv = this;
+
+                innr->mut.clear();
+            }
         }
         return *this;
     }
-    ShellPtr<T>& operator=(CorePtr<T> *i) {
+    ShellPtr<T>& operator=(std::nullptr_t) {
         DelIn();
-        innr = i;
-        if(innr != nullptr){
-            if(innr->outr == nullptr) {
-                innr->outr = this;
-            }
-            else {
-                ipriv = innr->outr;
-                inext = innr->outr->inext;
-                innr->outr->inext = this;
-                if(inext != nullptr)
-                    inext->ipriv = this;
-            }
-        }
         return *this;
     }
 
-    void Invalidate() {
-        if(valid) {
-            valid = false;
-            if(innr != nullptr && innr->outr == this)
-                innr->Invalidate();
-        }
+    void Invalidate() {//被动调用，此时this未上锁，innr已上锁，且innr需更新链
+        valid = false;
+        if(innr != nullptr && innr->outr == this)
+            innr->Invalidate();
     }
     void TryValidate(bool &pValid) {
         if(!pValid) {

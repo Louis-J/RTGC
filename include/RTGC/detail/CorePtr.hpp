@@ -21,15 +21,14 @@ class CorePtr {
     bool valid = true;
     std::atomic_flag mut = ATOMIC_FLAG_INIT;
     ShellPtr<T> *outr = nullptr;//所有者结点
-    void Invalidate() {
-        if(valid) {
-            valid = false;
-            if constexpr(decltype(haveInvalidate<T>(0))::value) {
-                real.Invalidate();
-            }
+
+    void Invalidate() {//被动调用，此时this已上锁，且real需更新链
+        valid = false;
+        if constexpr(decltype(haveInvalidate<T>(0))::value) {
+            real.Invalidate();
         }
     }
-    void TryValidate() {
+    void TryValidate() {//被动调用，此时this已上锁，且real需更新链
         if(outr->valid) {
             valid = true;
         } else for(auto i = outr->inext; i != nullptr; i = i->inext) {

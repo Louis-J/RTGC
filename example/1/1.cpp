@@ -1,6 +1,6 @@
 #include<iostream>
-#include<string>
 #include<memory>
+#include<string>
 #include<RTGC/RTGC.hpp>
 
 using namespace std;
