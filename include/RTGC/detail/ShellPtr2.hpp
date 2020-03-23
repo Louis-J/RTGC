@@ -10,17 +10,13 @@ template<typename T>
 class CorePtr;
 
 #ifdef RTGCDEBUG
-#define RTGC_P(mut, num)                        \
-for(auto j = 1; (mut).test_and_set(); j++) {    \
-    if(j%100 == 0)                              \
-        std::cout << "\nstucked "#num"!";       \
-    else if(j%1000 == 0)                        \
-        std::cout << "\nstucked error "#num"!"; \
+#define RTGC_P(mut, num)                    \
+for(auto j = 0; (mut).test_and_set(); j++) {\
+    if(j%100 == 0)                          \
+        std::cout << "\nstucked "#num"!";   \
 }
 #else
-#define RTGC_P(mut, num)    \
-while((mut).test_and_set()){\
-}
+#define RTGC_P(mut, num) while((mut).test_and_set()){}
 #endif
 
 template<typename T>
@@ -28,16 +24,17 @@ class ShellPtr {
     friend class CorePtr<T>;
 private:
     bool valid = true;
+    std::atomic_flag mut = ATOMIC_FLAG_INIT;
     CorePtr<T> *innr = nullptr;//指向的内节点，即指向的堆地址
     ShellPtr<T> *ipriv = nullptr, *inext = nullptr;//子层上一结点,下一结点
     
-    [[gnu::always_inline]] void EraseMin() {
+    void EraseMin() {
         if(ipriv != nullptr)
             ipriv->inext = inext;
         if(inext != nullptr)
             inext->ipriv = ipriv;
     }
-    [[gnu::always_inline]] void Erase() {
+    void Erase() {
         if(ipriv != nullptr)
             ipriv->inext = inext;
         if(inext != nullptr)
@@ -46,11 +43,13 @@ private:
         inext = nullptr;
     }
     //判断是否删除内层
-    [[gnu::always_inline]] void DelIn() {
+    void DelIn() {
         if(innr != nullptr) {//主动删且有innr，此时this未上锁，innr未上锁
             RTGC_P(innr->mut, 0)
             if(innr->outr == this) {//有强引用innr，需更新链
                 valid = false;
+                innr->mut.clear();
+
                 innr->Invalidate();
                 innr->TryValidate();
                 Erase();
@@ -171,12 +170,12 @@ public:
         return *this;
     }
 
-    [[gnu::always_inline]] void Invalidate() {//被动调用，此时this未上锁，innr已上锁，且innr需更新链
+    void Invalidate() {//被动调用，此时this未上锁，innr已上锁，且innr需更新链
         valid = false;
         if(innr != nullptr && innr->outr == this)
             innr->Invalidate();
     }
-    [[gnu::always_inline]] void TryValidate(bool &pValid) {
+    void TryValidate(bool &pValid) {
         if(!pValid) {
             if(innr != nullptr && innr->outr == this)
                 innr->TryValidate();

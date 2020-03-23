@@ -1,9 +1,9 @@
 #include<iostream>
-#include<memory>
-#include<vector>
-#include<RTGC/RTGC.hpp>
 #include<thread>
 #include<mutex>
+#include<RTGC/RTGC.hpp>
+#include<memory>
+#include<vector>
 // #include<variant>
 #include<boost/variant2/variant.hpp>
 using namespace boost::variant2;
@@ -12,9 +12,9 @@ using namespace boost::variant2;
 using namespace std;
 using namespace RTGC;
 
-constexpr int ThreadNum = 5;
-constexpr int ArrayNum = 10;
-constexpr int LoopNum = 10;
+constexpr int ThreadNum = 50;
+constexpr int ArrayNum = 1000;
+constexpr int LoopNum = 100;
 
 class T1 {
 public:
@@ -110,6 +110,7 @@ int main() {
         cout << "cnsNum = " << T1::cnsNum << endl;
         cout << "desNum = " << T1::desNum << endl;
     }
+    cout << endl;
     cout << "shared_ptr:" << endl;
     {
         boost::timer::cpu_timer t;

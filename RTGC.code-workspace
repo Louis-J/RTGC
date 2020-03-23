@@ -74,7 +74,9 @@
 			"__mutex_base": "cpp",
 			"__threading_support": "cpp",
 			"__config": "cpp",
-			"__nullptr": "cpp"
+			"__nullptr": "cpp",
+			"stop_token": "cpp",
+			"cerrno": "cpp"
 		},
 		"C_Cpp.default.configurationProvider": "vector-of-bool.cmake-tools",
 		"cmake.cmakePath": "F:\\Program\\ProMaker\\CCPP\\Compiler\\cmake\\bin\\cmake.exe",

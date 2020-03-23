@@ -5,7 +5,7 @@
 #include<memory>
 #include<RTGC/RTGC.hpp>
 #include"memUse.hpp"
-#include<boost/timer.hpp>
+#include<boost/timer/timer.hpp>
 
 #ifdef USE_TCMALLOC
 #include"tcmalloc.h"
@@ -244,15 +244,18 @@ int main() {
     cout << "Test1" << endl;
     {
         const size_t memUse = getCurrentRSS();
-        const boost::timer timeBegin;
+        boost::timer::cpu_timer t;
+        t.start();
         for (int i = 0; i < LOOPSIZE; i++) {
             for (auto &[list, k] : exams) {
-                // auto ret = ListNodeA::Create(list);
-                auto ret = Solution<ListNodeA>().reverseKGroup(ListNodeA::Create(list), k);
+                // ListNodeA::Create(list);
+                Solution<ListNodeA>().reverseKGroup(ListNodeA::Create(list), k);
             }
         }
-        const uint32_t timeBy = timeBegin.elapsed() * 1000;
-        cout << "time:" << timeBy << "ms" << endl;
+        t.stop();
+        cout << "all : " << t.elapsed().wall/1000000 << "ms" << endl;   //输出：start()至调用此函数的经过时间
+        cout << "user : " << t.elapsed().user/1000000 << "ms" << endl;   //输出：start()至调用此函数的用户时间
+        cout << "system : " << t.elapsed().system/1000000 << "ms" << endl; //输出：start()至调用此函数的系统时间
         cout << "memory use:" << getCurrentRSS() - memUse << endl;
     }
     cout << endl << "Press any key:";
@@ -260,15 +263,18 @@ int main() {
     cout << "Test2" << endl;
     {
         const size_t memUse = getCurrentRSS();
-        const boost::timer timeBegin;
+        boost::timer::cpu_timer t;
+        t.start();
         for (int i = 0; i < LOOPSIZE; i++) {
             for (auto &[list, k] : exams) {
-                // auto ret = ListNodeB::Create(list);
-                auto ret = Solution<ListNodeB>().reverseKGroup(ListNodeB::Create(list), k);
+                // ListNodeB::Create(list);
+                Solution<ListNodeB>().reverseKGroup(ListNodeB::Create(list), k);
             }
         }
-        const uint32_t timeBy = timeBegin.elapsed() * 1000;
-        cout << "time:" << timeBy << "ms" << endl;
+        t.stop();
+        cout << "all : " << t.elapsed().wall/1000000 << "ms" << endl;   //输出：start()至调用此函数的经过时间
+        cout << "user : " << t.elapsed().user/1000000 << "ms" << endl;   //输出：start()至调用此函数的用户时间
+        cout << "system : " << t.elapsed().system/1000000 << "ms" << endl; //输出：start()至调用此函数的系统时间
         cout << "memory use:" << getCurrentRSS() - memUse << endl;
     }
     cout << endl << "Press any key:";
@@ -276,15 +282,18 @@ int main() {
     cout << "Test3" << endl;
     {
         const size_t memUse = getCurrentRSS();
-        const boost::timer timeBegin;
+        boost::timer::cpu_timer t;
+        t.start();
         for (int i = 0; i < LOOPSIZE; i++) {
             for (auto &[list, k] : exams) {
-                // auto ret = ListNodeC::Create(list);
-                auto ret = Solution<ListNodeC>().reverseKGroup(ListNodeC::Create(list), k);
+                // ListNodeC::Create(list);
+                Solution<ListNodeC>().reverseKGroup(ListNodeC::Create(list), k);
             }
         }
-        const uint32_t timeBy = timeBegin.elapsed() * 1000;
-        cout << "time:" << timeBy << "ms" << endl;
+        t.stop();
+        cout << "all : " << t.elapsed().wall/1000000 << "ms" << endl;   //输出：start()至调用此函数的经过时间
+        cout << "user : " << t.elapsed().user/1000000 << "ms" << endl;   //输出：start()至调用此函数的用户时间
+        cout << "system : " << t.elapsed().system/1000000 << "ms" << endl; //输出：start()至调用此函数的系统时间
         cout << "memory use:" << getCurrentRSS() - memUse << endl;
     }
     cout << endl << "Press any key:";
