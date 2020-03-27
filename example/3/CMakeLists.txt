@@ -33,11 +33,10 @@ elseif (SIZEOF_VOID_P MATCHES "8")
     SET(LIBRARY_PLATFORM_SUFFIX "${CMAKE_CXX_COMPILER_ID}_64")
 endif ()
 message("${LIBRARY_PLATFORM_SUFFIX}")
+link_libraries("psapi")
 link_libraries("boost_timer-mt_${LIBRARY_PLATFORM_SUFFIX}")
 link_libraries("boost_chrono-mt_${LIBRARY_PLATFORM_SUFFIX}")
-link_libraries("mcfgthread64")
-# link_libraries("pthread")
-link_libraries("psapi")
+link_libraries("pthread")
 
 
 
@@ -45,6 +44,6 @@ link_libraries("psapi")
 # setting orther option
 # ADD_DEFINITIONS("-DRTGCDEBUG")
 # ADD_DEFINITIONS("-DRTGCSPUSE=1")
-add_executable(3  # 输出名为NBody的可执行文件
+add_executable(e3  # 输出名为NBody的可执行文件
     ${DIR_SRCS}
 )

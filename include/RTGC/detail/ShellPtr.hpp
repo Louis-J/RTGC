@@ -9,19 +9,7 @@ namespace RTGC { namespace detail {
 template<typename T>
 class CorePtr;
 
-#ifdef RTGCDEBUG
-#define RTGC_P(mut, num)                        \
-for(auto j = 1; (mut).test_and_set(); j++) {    \
-    if(j%100 == 0)                              \
-        std::cout << "\nstucked "#num"!";       \
-    else if(j%1000 == 0)                        \
-        std::cout << "\nstucked error "#num"!"; \
-}
-#else
-#define RTGC_P(mut, num)    \
-while((mut).test_and_set()){\
-}
-#endif
+extern std::atomic_flag GlobalMutex;
 
 template<typename T>
 class ShellPtr {
@@ -31,13 +19,13 @@ private:
     CorePtr<T> *innr = nullptr;//指向的内节点，即指向的堆地址
     ShellPtr<T> *ipriv = nullptr, *inext = nullptr;//子层上一结点,下一结点
     
-    [[gnu::always_inline]] void EraseMin() {
+    void EraseMin() {
         if(ipriv != nullptr)
             ipriv->inext = inext;
         if(inext != nullptr)
             inext->ipriv = ipriv;
     }
-    [[gnu::always_inline]] void Erase() {
+    void Erase() {
         if(ipriv != nullptr)
             ipriv->inext = inext;
         if(inext != nullptr)
@@ -46,9 +34,8 @@ private:
         inext = nullptr;
     }
     //判断是否删除内层
-    [[gnu::always_inline]] void DelIn() {
+    void DelIn() {
         if(innr != nullptr) {//主动删且有innr，此时this未上锁，innr未上锁
-            RTGC_P(innr->mut, 0)
             if(innr->outr == this) {//有强引用innr，需更新链
                 valid = false;
                 innr->Invalidate();
@@ -58,11 +45,9 @@ private:
                     delete innr;
                 } else {//innr更新
                     valid = true;
-                    innr->mut.clear();
                 }
             } else {//无强引用innr
                 Erase();
-                innr->mut.clear();
             }
             innr = nullptr;
         }
@@ -74,7 +59,6 @@ public:
             if(innr != nullptr && innr->outr == this)
                 delete innr;
         } else if(innr != nullptr) {//主动删且有innr，此时this未上锁，innr未上锁
-            RTGC_P(innr->mut, 1)
             if(innr->outr == this) {//有强引用innr，需更新链
                 valid = false;
                 innr->Invalidate();
@@ -84,11 +68,9 @@ public:
                     delete innr;
                 } else {//innr更新
                     Erase();
-                    innr->mut.clear();
                 }
             } else {//无强引用innr
                 EraseMin();
-                innr->mut.clear();
             }
         }
         //主动删且无innr
@@ -97,30 +79,28 @@ public:
     ShellPtr() {}
     ShellPtr(ShellPtr<T> &o) {
         if(o.innr != nullptr) {
+            while(GlobalMutex.test_and_set());
             innr = o.innr;
-            RTGC_P(innr->mut, 2)
 
             ipriv = &o;
             inext = o.inext;
             o.inext = this;
             if(inext != nullptr)
                 inext->ipriv = this;
-
-            innr->mut.clear();
+            GlobalMutex.clear();
         }
     }
     ShellPtr(const ShellPtr<T> &o) {
         if(o.innr != nullptr){
+            while(GlobalMutex.test_and_set());
             innr = o.innr;
-            RTGC_P(innr->mut, 3)
 
             ipriv = const_cast<ShellPtr<T>*>(&o);
             inext = o.inext;
             const_cast<ShellPtr<T>*>(&o)->inext = this;
             if(inext != nullptr)
                 inext->ipriv = this;
-
-            innr->mut.clear();
+            GlobalMutex.clear();
         }
     }
     ShellPtr(CorePtr<T> *i) {
@@ -132,51 +112,51 @@ public:
 
     ShellPtr<T>& operator=(ShellPtr<T> &o) {
         if(innr != o.innr) {
+            while(GlobalMutex.test_and_set());
             DelIn();
             if(o.innr != nullptr){
                 innr = o.innr;
-                RTGC_P(innr->mut, 4)
                 
                 ipriv = &o;
                 inext = o.inext;
                 o.inext = this;
                 if(inext != nullptr)
                     inext->ipriv = this;
-
-                innr->mut.clear();
             }
+            GlobalMutex.clear();
         }
         return *this;
     }
     ShellPtr<T>& operator=(ShellPtr<T> &&o) {
         if(innr != o.innr) {
+            while(GlobalMutex.test_and_set());
             DelIn();
             if(o.innr != nullptr){
                 innr = o.innr;
-                RTGC_P(innr->mut, 5)
                 
                 ipriv = &o;
                 inext = o.inext;
                 o.inext = this;
                 if(inext != nullptr)
                     inext->ipriv = this;
-
-                innr->mut.clear();
             }
+            GlobalMutex.clear();
         }
         return *this;
     }
     ShellPtr<T>& operator=(std::nullptr_t) {
+        while(GlobalMutex.test_and_set());
         DelIn();
+        GlobalMutex.clear();
         return *this;
     }
 
-    [[gnu::always_inline]] void Invalidate() {//被动调用，此时this未上锁，innr已上锁，且innr需更新链
+    void Invalidate() {//被动调用，此时this未上锁，innr已上锁，且innr需更新链
         valid = false;
         if(innr != nullptr && innr->outr == this)
             innr->Invalidate();
     }
-    [[gnu::always_inline]] void TryValidate(bool &pValid) {
+    void TryValidate(bool &pValid) {
         if(!pValid) {
             if(innr != nullptr && innr->outr == this)
                 innr->TryValidate();

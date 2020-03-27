@@ -20,14 +20,14 @@
             "type": "cppdbg",
             "request": "launch",
             // "program": "${fileDirname}\\${fileBasenameNoExtension}.exe",
-            "program": "${workspaceFolder}/bin/example/${fileBasenameNoExtension}.exe",
+            "program": "${workspaceFolder}/bin/example/e${fileBasenameNoExtension}.exe",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
             "externalConsole": false,
             "MIMode": "gdb",
-            "miDebuggerPath": "F:/Program/ProMaker/CCPP/Compiler/mingw64/bin/gdb.exe",
+            "miDebuggerPath": "F:/Program/ProMaker/CCPP/Compiler/GNU64/bin/gdb.exe",
             "setupCommands": [
                 {
                     "description": "为 gdb 启用整齐打印",

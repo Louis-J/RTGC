@@ -23,12 +23,11 @@ AUX_SOURCE_DIRECTORY(. DIR_SRCS) # 添加源代码文件夹, 自动扫描所有�
 
 # 环境和平台检测
 # detecting environment and platform
-# link_libraries("pthread")
 
 
 
 # 其他设置
 # setting orther option
-add_executable(0  # 输出名为NBody的可执行文件
+add_executable(e0  # 输出名为NBody的可执行文件
     ${DIR_SRCS}
 )
