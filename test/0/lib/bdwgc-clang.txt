@@ -1,0 +1,1 @@
+clang编译bdwgc时，注释掉gc_cpp.cpp内所有函数（gcc不需要）

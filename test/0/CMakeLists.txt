@@ -18,8 +18,8 @@ SET(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3") # release模式下 gdb相关�
 SET(EXECUTABLE_OUTPUT_PATH "${PROJECT_SOURCE_DIR}/../../bin/test") # 可执行文件输出目录
 include_directories("${PROJECT_SOURCE_DIR}/../../include") # 头文件包含目录
 include_directories("F:/Program/ProMaker/CCPP/Compiler/3rd/include") # Boost
-link_directories("F:/Program/ProMaker/CCPP/Compiler/3rd/lib")
-link_directories("${PROJECT_SOURCE_DIR}/lib")
+link_directories("F:/Program/ProMaker/CCPP/Compiler/3rd/lib/")
+link_directories("${PROJECT_SOURCE_DIR}/lib/")
 AUX_SOURCE_DIRECTORY(. DIR_SRCS) # 添加源代码文件夹, 自动扫描所有文件
 
 
@@ -38,7 +38,7 @@ link_libraries("psapi")
 link_libraries("boost_timer-mt_${LIBRARY_PLATFORM_SUFFIX}")
 link_libraries("boost_chrono-mt_${LIBRARY_PLATFORM_SUFFIX}")
 link_libraries("pthread")
-link_libraries("gc-lib")
+link_libraries("gc-lib_${LIBRARY_PLATFORM_SUFFIX}")
 
 
 
