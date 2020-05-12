@@ -16,7 +16,7 @@ using namespace std;
 using namespace RTGC;
 
 #define HAVE_CNS 1
-#define HAVE_DES 1
+#define HAVE_DES 0
 
 struct ListNodeA {
     using TPtr = ListNodeA*;
@@ -25,14 +25,11 @@ struct ListNodeA {
     }
 
     static size_t cnsNum;
-    static size_t cnsNumMax;
     int val;
     ListNodeA *next;
     ListNodeA(int x) : val(x), next(NULL) {
         #if HAVE_CNS
         cnsNum ++;
-        if(cnsNum >= cnsNumMax)
-            cnsNumMax = cnsNum;
         #endif
     }
     static ListNodeA *Create(initializer_list<int>& list) {
@@ -70,14 +67,11 @@ struct ListNodeB {
     }
 
     static size_t cnsNum;
-    static size_t cnsNumMax;
     int val;
     shared_ptr<ListNodeB> next;
     ListNodeB(int x) : val(x), next(NULL) {
         #if HAVE_CNS
         cnsNum ++;
-        if(cnsNum >= cnsNumMax)
-            cnsNumMax = cnsNum;
         #endif
     }
     static shared_ptr<ListNodeB> Create(initializer_list<int>& list) {
@@ -115,15 +109,12 @@ struct ListNodeC {
     }
 
     static size_t cnsNum;
-    static size_t cnsNumMax;
     CLASSLINK(ListNodeC, 2)
     int val;
     ShellPtr<ListNodeC> next;
     ListNodeC(int x) : val(x), next(NULL) {
         #if HAVE_CNS
         cnsNum ++;
-        if(cnsNum >= cnsNumMax)
-            cnsNumMax = cnsNum;
         #endif
     }
     static ShellPtr<ListNodeC> Create(initializer_list<int>& list) {
@@ -211,14 +202,10 @@ size_t ListNodeA::cnsNum = 0;
 size_t ListNodeB::cnsNum = 0;
 size_t ListNodeC::cnsNum = 0;
 
-size_t ListNodeA::cnsNumMax = 0;
-size_t ListNodeB::cnsNumMax = 0;
-size_t ListNodeC::cnsNumMax = 0;
-
 
 #define LOOPSIZE 200000
 int main() {
-    vector<tuple<initializer_list<int>, int>> exams = {
+    vector<pair<initializer_list<int>, int>> exams = {
         {{1,2,3,4,5}, 2},
         {{1,2,3,4,5,6,7}, 3},
         {{1,2,3,4,5,6,7,8,9,10}, 4},
@@ -302,13 +289,10 @@ int main() {
     {
         cout << "1: " << endl;
         cout << ListNodeA::cnsNum << endl;
-        cout << ListNodeA::cnsNumMax << endl;
         cout << "2: " << endl;
         cout << ListNodeB::cnsNum << endl;
-        cout << ListNodeB::cnsNumMax << endl;
         cout << "3: " << endl;
         cout << ListNodeC::cnsNum << endl;
-        cout << ListNodeC::cnsNumMax << endl;
         cout << endl;
     }
 }

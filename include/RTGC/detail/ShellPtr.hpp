@@ -43,9 +43,8 @@ private:
                 Erase();
                 if(innr->outr == this && !innr->valid) {//innr废弃
                     delete innr;
-                } else {//innr更新
-                    valid = true;
                 }
+                valid = true;
             } else {//无强引用innr
                 Erase();
             }
@@ -173,6 +172,12 @@ public:
     T* operator->() {
         return &(innr->real);
     }
+    
+    //TODO: 避免多继承
+    template<typename _Tp,
+        typename = typename std::enable_if<std::is_base_of<_Tp, T>::value, int>::type>
+        return *(ShellPtr<_Tp>*)this;
+    }
 
     friend bool operator==(const ShellPtr<T> &a, const ShellPtr<T> &b) {
         return a.innr == b.innr;
@@ -192,6 +197,20 @@ public:
     }
     friend bool operator!=(std::nullptr_t, const ShellPtr<T> &s) {
         return s.innr != nullptr;
+    }
+
+	//仅可用于 == this
+    friend bool operator!=(const ShellPtr<T> &a, const T *b) {
+        return a.innr != (CorePtr<T>*)b;
+    }
+    friend bool operator!=(const T *b, const ShellPtr<T> &a) {
+        return a.innr != (CorePtr<T>*)b;
+    }
+    friend bool operator==(const ShellPtr<T> &a, const T *b) {
+        return a.innr == (CorePtr<T>*)b;
+    }
+    friend bool operator==(const T *b, const ShellPtr<T> &a) {
+        return a.innr == (CorePtr<T>*)b;
     }
 };
 

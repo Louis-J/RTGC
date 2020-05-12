@@ -92,12 +92,13 @@
 			"ios": "cpp",
 			"locale": "cpp",
 			"queue": "cpp",
-			"stack": "cpp"
+			"stack": "cpp",
+			"__functional_base_03": "cpp"
 		},
 		"C_Cpp.default.configurationProvider": "vector-of-bool.cmake-tools",
-		"cmake.cmakePath": "F:\\Program\\ProMaker\\CCPP\\Compiler\\cmake\\bin\\cmake.exe",
+		"cmake.cmakePath": "F:/Program/ProMaker/CCPP/Compiler/cmake/bin/cmake.exe",
 		"cmake.configureSettings": {
-			"CMAKE_MAKE_PROGRAM": "F:/Program/ProMaker/CCPP/Compiler/mingw64/bin/mingw32-make.exe",
+			"CMAKE_MAKE_PROGRAM": "F:/Program/ProMaker/CCPP/Compiler/Make/ClangMake.exe",
 		},
 		"cmake.generator": "MinGW Makefiles",
 		"cmake.ignoreKitEnv": true,
