@@ -187,7 +187,13 @@ struct CirNodeD {
             next = next->next;
         }
         next->next = head->next;
+        #if 0
         return head->next;
+        #else
+        auto ret = head->next;
+        MakeOptimisedDes2(head, next);
+        return ret;
+        #endif
     }
     friend ostream& operator<<(ostream& ostr, TPtr &c) {
         if(c == nullptr)
@@ -228,30 +234,7 @@ size_t CirNodeD::cnsNum = 0;
 
 
 constexpr size_t LOOPSIZE = 20000;
-using CirType = CirNodeA;
-
-
-class Base0 {
-public:
-    virtual void print0() { cout << "base0\n"; }
-};
-
-class Sub0: public Base0 {
-public:
-    virtual void print0() { cout << "sub0\n"; }
-};
-
-class Base1 {
-public:
-    virtual void print1() { cout << "base1\n"; }
-};
-
-class Sub1: public Base0, public Base1 {
-    // Sub1() {}
-public:
-    virtual void print0() { cout << "sub00\n"; }
-    virtual void print1() { cout << "sub01\n"; }
-};
+using CirType = CirNodeD;
 
 int main() {
     cout << "Result" << endl;

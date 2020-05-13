@@ -9,8 +9,6 @@ namespace RTGC { namespace detail {
 template<typename T>
 class CorePtr;
 
-extern std::atomic_flag GlobalMutex;
-
 template<typename T>
 class ShellPtr {
     friend class CorePtr<T>;
@@ -52,6 +50,18 @@ private:
         }
     }
 public:
+    void IN2() {
+        if(valid && innr != nullptr && innr->outr == this) {
+            valid = false;
+            innr->Invalidate();
+        }
+    }
+    void TR2() {
+        if(!valid) {
+            innr->TryValidate();
+        }
+    }
+
     ~ShellPtr() {
         if(!valid) {//被动删，此时this上锁，innr上锁
             EraseMin();
@@ -62,11 +72,9 @@ public:
                 valid = false;
                 innr->Invalidate();
                 innr->TryValidate();
+                EraseMin();
                 if(innr->outr == this && !innr->valid) {//innr废弃
-                    EraseMin();
                     delete innr;
-                } else {//innr更新
-                    Erase();
                 }
             } else {//无强引用innr
                 EraseMin();
@@ -78,7 +86,6 @@ public:
     ShellPtr() {}
     ShellPtr(ShellPtr<T> &o) {
         if(o.innr != nullptr) {
-            while(GlobalMutex.test_and_set());
             innr = o.innr;
 
             ipriv = &o;
@@ -86,12 +93,10 @@ public:
             o.inext = this;
             if(inext != nullptr)
                 inext->ipriv = this;
-            GlobalMutex.clear();
         }
     }
     ShellPtr(const ShellPtr<T> &o) {
         if(o.innr != nullptr){
-            while(GlobalMutex.test_and_set());
             innr = o.innr;
 
             ipriv = const_cast<ShellPtr<T>*>(&o);
@@ -99,7 +104,6 @@ public:
             const_cast<ShellPtr<T>*>(&o)->inext = this;
             if(inext != nullptr)
                 inext->ipriv = this;
-            GlobalMutex.clear();
         }
     }
     ShellPtr(CorePtr<T> *i) {
@@ -111,7 +115,6 @@ public:
 
     ShellPtr<T>& operator=(ShellPtr<T> &o) {
         if(innr != o.innr) {
-            while(GlobalMutex.test_and_set());
             DelIn();
             if(o.innr != nullptr){
                 innr = o.innr;
@@ -122,13 +125,11 @@ public:
                 if(inext != nullptr)
                     inext->ipriv = this;
             }
-            GlobalMutex.clear();
         }
         return *this;
     }
     ShellPtr<T>& operator=(ShellPtr<T> &&o) {
         if(innr != o.innr) {
-            while(GlobalMutex.test_and_set());
             DelIn();
             if(o.innr != nullptr){
                 innr = o.innr;
@@ -139,14 +140,11 @@ public:
                 if(inext != nullptr)
                     inext->ipriv = this;
             }
-            GlobalMutex.clear();
         }
         return *this;
     }
     ShellPtr<T>& operator=(std::nullptr_t) {
-        while(GlobalMutex.test_and_set());
         DelIn();
-        GlobalMutex.clear();
         return *this;
     }
 
@@ -176,6 +174,7 @@ public:
     //TODO: 避免多继承
     template<typename _Tp,
         typename = typename std::enable_if<std::is_base_of<_Tp, T>::value, int>::type>
+    operator ShellPtr<_Tp>() {
         return *(ShellPtr<_Tp>*)this;
     }
 

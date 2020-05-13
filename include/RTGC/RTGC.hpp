@@ -5,16 +5,10 @@
 #include<utility>
 #include"detail/ClassMembers.hpp"
 
-#if RTGCSPUSE == 1
-#include"detail/ShellPtr1.hpp"
-#elif RTGCSPUSE == 2
-#include"detail/ShellPtr2.hpp"
-#else
 #include"detail/ShellPtr.hpp"
-#endif
-
 #include"detail/LinkAnce.hpp"
 #include"detail/CorePtr.hpp"
+#include"detail/Optimised.hpp"
 
 namespace RTGC {
 
@@ -26,6 +20,10 @@ inline ShellPtr<_Tp> MakeShell(_Args&&... __args) {
     return detail::MakeShell<_Tp>(std::forward<_Args>(__args)...);
 }
 
+template<class... Args>
+constexpr void MakeOptimisedDes2(Args&&... args) {
+    return detail::MakeOptimisedDes(std::forward<Args>(args)...);
+}
 
 }
 

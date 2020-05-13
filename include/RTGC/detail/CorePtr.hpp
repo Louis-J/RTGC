@@ -19,7 +19,6 @@ class CorePtr {
     
     T real;
     bool valid = true;
-    std::atomic_flag mut = ATOMIC_FLAG_INIT;
     ShellPtr<T> *outr = nullptr;//所有者结点
 
     [[gnu::always_inline]] void Invalidate() {//被动调用，此时this已上锁，且real需更新链
