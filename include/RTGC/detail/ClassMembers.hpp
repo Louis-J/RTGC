@@ -116,25 +116,25 @@ namespace RTGC { namespace detail {
 #define X_99 X_98,x99
 #define X_100 X_99,x100
 
-template <class... Args>
-constexpr auto make_tuple_of_references(Args&&... args) noexcept {
-    return std::tuple<Args&...>{args... };
-}
 
 template <std::size_t N>
 using const_size_t = std::integral_constant<std::size_t, N>;
 
 #define CONST_SIZE(num) const_size_t<(num)>
 
-//if error :====================> RTGC: mNum error!
-#define DEF_TIE_FUNC(num)                                       \
-constexpr static auto tie_as_tuple(T& val, CONST_SIZE(num)) {   \
-    auto &[X_##num] = val;                                      \
-    return make_tuple_of_references(X_##num);                   \
+template <class... Args>
+constexpr auto MakeConstexprTupleByReferences(Args&&... args) noexcept {
+    return std::tuple<Args&...>{args... };
+}
+
+#define DEF_TIE_FUNC(num)                                   \
+constexpr static auto TieToTuple(T& val, CONST_SIZE(num)) { \
+    auto &[X_##num] = val;                                  \
+    return MakeConstexprTupleByReferences(X_##num);         \
 }
 
 template <class T>
-struct toTuple{
+struct ToTuple{
     DEF_TIE_FUNC(1);
     DEF_TIE_FUNC(2);
     DEF_TIE_FUNC(3);
@@ -245,8 +245,8 @@ struct toTuple{
     DEF_TIE_FUNC(99);
     DEF_TIE_FUNC(100);
     template <std::size_t N>
-    constexpr static auto tie_as_tuple(T& val, const_size_t<N>) {
-        static_assert(N != N, "====================> RTGC: add tie_as_tuple(T& val, const_size_t<N>)");
+    constexpr static auto TieToTuple(T& val, const_size_t<N>) {
+        static_assert(N != N, "====================> RTGC: add TieToTuple(T& val, const_size_t<N>)");
     }
 };
 

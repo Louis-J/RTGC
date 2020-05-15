@@ -18,11 +18,11 @@ constexpr int LoopNum = 100;
 
 class T1 {
 public:
-    CLASSLINK(T1, 1)
+    RTGC_AutoChainLink(T1, 1)
     static size_t cnsNum;
     static size_t desNum;
 public:
-    ShellPtr<T1> next;
+    ChainPtr<T1> next;
     T1() {
         cnsNum++;
         // cout << "construct\n";
@@ -55,7 +55,7 @@ public:
 size_t T2::cnsNum = 0;
 size_t T2::desNum = 0;
 
-variant<ShellPtr<T1>, shared_ptr<T2>> gPtr;
+variant<ChainPtr<T1>, shared_ptr<T2>> gPtr;
 mutex gSync;
 mutex gInit;
 mutex gInitFinish;
@@ -90,13 +90,13 @@ int main() {
         boost::timer::cpu_timer t;
         t.start();
         for (int i = 0; i < LoopNum; i++) {
-            gPtr = MakeShell<T1>();
+            gPtr = MakeChain<T1>();
 
             gnitNum = 0;
             gSync.lock();
-            vector<ThreadProc<ShellPtr<T1>>> pool(ThreadNum);
+            vector<ThreadProc<ChainPtr<T1>>> pool(ThreadNum);
             gInitFinish.lock();
-            gPtr.emplace<ShellPtr<T1>>(nullptr);
+            gPtr.emplace<ChainPtr<T1>>(nullptr);
             gSync.unlock();
             
             for(auto &j : pool) {

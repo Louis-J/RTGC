@@ -7,20 +7,38 @@ using namespace std;
 using namespace RTGC;
 
 class T1 {//use RTGC
-public:
-    CLASSLINK(T1, 2)
-
 private:
     string str;
 public:
-    ShellPtr<T1> next;
+    ChainPtr<T1> next;
     T1(string &&str):str(str){
         cout << str << " construct\n";
     }
     ~T1() {
         cout << str << " destruct\n";
     }
+public:
+    RTGC_AutoChainLink(T1, 2);
+    RTGC_AutoCRDetectIn(T1, 2);
 };
+RTGC_AutoCRDetectOut(T1, true);
+
+class T0 {//use RTGC
+private:
+    string str;
+public:
+    T0(string &&str):str(str){
+        cout << str << " construct\n";
+    }
+    ~T0() {
+        cout << str << " destruct\n";
+    }
+public:
+    RTGC_AutoChainLink(T0, 1);
+    RTGC_AutoCRDetectIn(T0, 1);
+};
+RTGC_AutoCRDetectOut(T0, false);
+
 
 class T2 {//use shared_ptr
 private:
@@ -52,8 +70,8 @@ int main() {
     cout << "Test1:" << endl;
     cout << "RTGC:" << endl;
     {
-        ShellPtr<T1> tA(MakeShell<T1>("tA"));
-        ShellPtr<T1> tB(MakeShell<T1>("tB"));
+        ChainPtr<T1> tA(MakeChain<T1>("tA"));
+        ChainPtr<T1> tB(MakeChain<T1>("tB"));
         tA->next = tB;
         tB->next = tA;
     }
@@ -76,8 +94,8 @@ int main() {
     cout << "Test2:" << endl;
     cout << "RTGC:" << endl;
     {
-        ShellPtr<T1> tA(MakeShell<T1>("tA"));
-        tA->next = MakeShell<T1>("tB");
+        ChainPtr<T1> tA(MakeChain<T1>("tA"));
+        tA->next = MakeChain<T1>("tB");
         tA->next->next = tA->next;
     }
     cout << "shared_ptr:" << endl;

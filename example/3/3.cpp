@@ -103,42 +103,84 @@ struct ListNodeB {
 };
 
 struct ListNodeC {
-    using TPtr = ShellPtr<ListNodeC>;
+    RTGC_AutoChainLink(ListNodeC, 2)
+    using TPtr = ChainPtr<ListNodeC>;
     static auto Alloc(int val) {
-        return MakeShell<ListNodeC>(val);
+        return MakeChain<ListNodeC>(val);
     }
 
     static size_t cnsNum;
-    CLASSLINK(ListNodeC, 2)
     int val;
-    ShellPtr<ListNodeC> next;
+    ChainPtr<ListNodeC> next;
     ListNodeC(int x) : val(x), next(NULL) {
         #if HAVE_CNS
         cnsNum ++;
         #endif
     }
-    static ShellPtr<ListNodeC> Create(initializer_list<int>& list) {
-        ShellPtr<ListNodeC> head(MakeShell<ListNodeC>(0));
-        ShellPtr<ListNodeC> next(head);
+    static ChainPtr<ListNodeC> Create(initializer_list<int>& list) {
+        ChainPtr<ListNodeC> head(MakeChain<ListNodeC>(0));
+        ChainPtr<ListNodeC> next(head);
         for(auto& i : list){
-            next->next = MakeShell<ListNodeC>(i);
+            next->next = MakeChain<ListNodeC>(i);
             next = next->next;
         }
         return head->next;
     }
-    friend ostream& operator<<(ostream& ostr, ShellPtr<ListNodeC>& l) {
+    friend ostream& operator<<(ostream& ostr, ChainPtr<ListNodeC>& l) {
         ostr << l->val;
         if(l->next != nullptr)
             ostr << "->" << l->next;
         return ostr;
     }
-    friend ostream& operator<<(ostream& ostr, ShellPtr<ListNodeC>&& l) {
+    friend ostream& operator<<(ostream& ostr, ChainPtr<ListNodeC>&& l) {
         ostr << l->val;
         if(l->next != nullptr)
             ostr << "->" << l->next;
         return ostr;
     }
     ~ListNodeC() {
+        #if HAVE_DES
+        cnsNum --;
+        #endif
+    }
+};
+
+struct ListNodeD {
+    using TPtr = CountPtr<ListNodeD>;
+    static auto Alloc(int val) {
+        return MakeCount<ListNodeD>(val);
+    }
+
+    static size_t cnsNum;
+    int val;
+    CountPtr<ListNodeD> next;
+    ListNodeD(int x) : val(x), next(NULL) {
+        #if HAVE_CNS
+        cnsNum ++;
+        #endif
+    }
+    static CountPtr<ListNodeD> Create(initializer_list<int>& list) {
+        CountPtr<ListNodeD> head(MakeCount<ListNodeD>(0));
+        CountPtr<ListNodeD> next(head);
+        for(auto& i : list){
+            next->next = MakeCount<ListNodeD>(i);
+            next = next->next;
+        }
+        return head->next;
+    }
+    friend ostream& operator<<(ostream& ostr, CountPtr<ListNodeD>& l) {
+        ostr << l->val;
+        if(l->next != nullptr)
+            ostr << "->" << l->next;
+        return ostr;
+    }
+    friend ostream& operator<<(ostream& ostr, CountPtr<ListNodeD>&& l) {
+        ostr << l->val;
+        if(l->next != nullptr)
+            ostr << "->" << l->next;
+        return ostr;
+    }
+    ~ListNodeD() {
         #if HAVE_DES
         cnsNum --;
         #endif
@@ -201,6 +243,7 @@ ostream& operator<<(ostream& ostr, vector<T>&& v) {
 size_t ListNodeA::cnsNum = 0;
 size_t ListNodeB::cnsNum = 0;
 size_t ListNodeC::cnsNum = 0;
+size_t ListNodeD::cnsNum = 0;
 
 
 #define LOOPSIZE 200000
@@ -223,6 +266,7 @@ int main() {
             cout << "1: " << Solution<ListNodeA>().reverseKGroup(ListNodeA::Create(list), k) << endl;
             cout << "2: " << Solution<ListNodeB>().reverseKGroup(ListNodeB::Create(list), k) << endl;
             cout << "3: " << Solution<ListNodeC>().reverseKGroup(ListNodeC::Create(list), k) << endl;
+            cout << "4: " << Solution<ListNodeD>().reverseKGroup(ListNodeD::Create(list), k) << endl;
             cout << endl;
         }
     }
@@ -285,6 +329,25 @@ int main() {
     }
     cout << endl << "Press any key:";
     cin.get();
+    cout << "Test4" << endl;
+    {
+        const size_t memUse = getCurrentRSS();
+        boost::timer::cpu_timer t;
+        t.start();
+        for (int i = 0; i < LOOPSIZE; i++) {
+            for (auto &[list, k] : exams) {
+                // ListNodeD::Create(list);
+                Solution<ListNodeD>().reverseKGroup(ListNodeD::Create(list), k);
+            }
+        }
+        t.stop();
+        cout << "all : " << t.elapsed().wall/1000000 << "ms" << endl;   //输出：start()至调用此函数的经过时间
+        cout << "user : " << t.elapsed().user/1000000 << "ms" << endl;   //输出：start()至调用此函数的用户时间
+        cout << "system : " << t.elapsed().system/1000000 << "ms" << endl; //输出：start()至调用此函数的系统时间
+        cout << "memory use:" << getCurrentRSS() - memUse << endl;
+    }
+    cout << endl << "Press any key:";
+    cin.get();
     cout << "Construct Number:" << endl;
     {
         cout << "1: " << endl;
@@ -293,6 +356,8 @@ int main() {
         cout << ListNodeB::cnsNum << endl;
         cout << "3: " << endl;
         cout << ListNodeC::cnsNum << endl;
+        cout << "4: " << endl;
+        cout << ListNodeD::cnsNum << endl;
         cout << endl;
     }
 }

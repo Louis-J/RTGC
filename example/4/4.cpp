@@ -159,13 +159,12 @@ struct CirNodeC {
 };
 
 struct CirNodeD {
-    using TPtr = ShellPtr<CirNodeD>;
+    using TPtr = ChainPtr<CirNodeD>;
     static auto Alloc(int val) {
-        return MakeShell<CirNodeD>(val);
+        return MakeChain<CirNodeD>(val);
     }
 
     static size_t cnsNum;
-    CLASSLINK(CirNodeD, 2)
     int val;
     TPtr next;
     CirNodeD(int x) : val(x), next(NULL) {
@@ -180,10 +179,10 @@ struct CirNodeD {
         return n->val;
     }
     static TPtr Create(int num) {
-        TPtr head(MakeShell<CirNodeD>(0));
+        TPtr head(MakeChain<CirNodeD>(0));
         TPtr next(head);
         for(auto i = 0; i < num; i++) {
-            next->next = MakeShell<CirNodeD>(i);
+            next->next = MakeChain<CirNodeD>(i);
             next = next->next;
         }
         next->next = head->next;
@@ -191,7 +190,7 @@ struct CirNodeD {
         return head->next;
         #else
         auto ret = head->next;
-        MakeOptimisedDes2(head, next);
+        MakeOptimisedDes(head, next);
         return ret;
         #endif
     }
@@ -208,7 +207,17 @@ struct CirNodeD {
         cnsNum --;
         #endif
     }
+    RTGC_AutoChainLink(CirNodeD, 2);
 };
+namespace RTGC { namespace detail {
+template<class T, class U, std::enable_if_t<RTGC_IsComplex<T>::value && std::is_same<T, CirNodeD>::value, int> = 0>
+constexpr bool CanReferTo() {
+    using V = decltype(std::declval<CirNodeD>().ToTuple());
+    return MakeCanReferTo<V, U>();
+}
+}}
+static constexpr bool Dcir = RTGC::detail::CanReferTo<CirNodeD, CirNodeD>();
+
 
 template<typename T>
 ostream& operator<<(ostream& ostr, vector<T>& v) {
@@ -237,6 +246,9 @@ constexpr size_t LOOPSIZE = 20000;
 using CirType = CirNodeD;
 
 int main() {
+    cout << Dcir << endl;
+    return 0;
+
     cout << "Result" << endl;
     for(auto i = 20; i < 50; i++) {
         auto l = CirType::Create(i);

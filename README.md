@@ -12,7 +12,7 @@
 #include<RTGC/RTGC.hpp>
 
 class T1 {//use RTGC
-    CLASSLINK(T1, 2)
+    RTGC_AutoChainLink(T1, 2)
 private:
     std::string str;
 public:
@@ -37,8 +37,8 @@ public:
 int main() {
     std::cout << "RTGC:" << std::endl;
     {
-        RTGC::RootPtr<T1> t1(new RTGC::CorePtr<T1>("t1"));
-        RTGC::RootPtr<T1> t2(new RTGC::CorePtr<T1>("t2"));
+        RTGC::RootPtr<T1> t1(new RTGC::ChainCore<T1>("t1"));
+        RTGC::RootPtr<T1> t2(new RTGC::ChainCore<T1>("t2"));
         t1->next = t2;
         t2->next = t1;
     }

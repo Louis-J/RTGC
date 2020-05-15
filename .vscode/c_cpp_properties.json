@@ -7,6 +7,7 @@
                 "F:/Program/ProMaker/CCPP/Compiler/GNU64/x86_64-w64-mingw32/include/**",
                 "F:/Program/ProMaker/CCPP/Compiler/GNU64/include/**",
                 "F:/Program/ProMaker/CCPP/Compiler/Clang64/include/**",
+                "F:/Program/ProMaker/CCPP/Compiler/Clang64/include/c++/v1/**",
                 "F:/Program/ProMaker/CCPP/Compiler/3rd/include/**"
             ],
             "defines": [

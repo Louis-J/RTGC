@@ -9,7 +9,7 @@ namespace RTGC { namespace detail {
 
 template<class MB>
 constexpr void MakeOptimisedInvalidateOne(MB &mb) {
-    if constexpr(isShellPtr<MB>::value) {
+    if constexpr(isChainPtr<MB>::value) {
         mb.IN2();
     }
 }
@@ -20,7 +20,7 @@ constexpr void MakeOptimisedInvalidateImpl(const Tuple& t, std::index_sequence<I
 
 template<class MB>
 constexpr void MakeOptimisedTryValidateOne(MB &mb) {
-    if constexpr(isShellPtr<MB>::value) {
+    if constexpr(isChainPtr<MB>::value) {
         mb.TR2();
     }
 }
@@ -29,11 +29,11 @@ constexpr void MakeOptimisedTryValidateImpl(const Tuple& t, std::index_sequence<
     (MakeOptimisedTryValidateOne(std::get<Is>(t)), ...);
 }
 
-template<class... Args>
-constexpr void MakeOptimisedDes(Args&&... args) {
-    MakeOptimisedInvalidateImpl(std::tuple<Args&...>{args... }, std::index_sequence_for<Args...>{});
-    MakeOptimisedTryValidateImpl(std::tuple<Args&...>{args... }, std::index_sequence_for<Args...>{});
-}
+// template<class... Args>
+// constexpr void MakeOptimisedDes(Args&&... args) {
+//     MakeOptimisedInvalidateImpl(std::tuple<Args&...>{args... }, std::index_sequence_for<Args...>{});
+//     MakeOptimisedTryValidateImpl(std::tuple<Args&...>{args... }, std::index_sequence_for<Args...>{});
+// }
 
 }}
 

@@ -1,5 +1,5 @@
-#ifndef RTGC_DETAIL_SHELLPTR_HPP
-#define RTGC_DETAIL_SHELLPTR_HPP
+#ifndef RTGC_DETAIL_CHAINPTR_HPP
+#define RTGC_DETAIL_CHAINPTR_HPP
 
 #include<cstddef>
 #include<atomic>
@@ -7,15 +7,15 @@
 namespace RTGC { namespace detail {
 
 template<typename T>
-class CorePtr;
+class ChainCore;
 
 template<typename T>
-class ShellPtr {
-    friend class CorePtr<T>;
+class ChainPtr {
+    friend class ChainCore<T>;
 private:
     bool valid = true;
-    CorePtr<T> *innr = nullptr;//指向的内节点，即指向的堆地址
-    ShellPtr<T> *ipriv = nullptr, *inext = nullptr;//子层上一结点,下一结点
+    ChainCore<T> *innr = nullptr;//指向的内节点，即指向的堆地址
+    ChainPtr<T> *ipriv = nullptr, *inext = nullptr;//子层上一结点,下一结点
     
     void EraseMin() {
         if(ipriv != nullptr)
@@ -62,7 +62,7 @@ public:
         }
     }
 
-    ~ShellPtr() {
+    ~ChainPtr() {
         if(!valid) {//被动删，此时this上锁，innr上锁
             EraseMin();
             if(innr != nullptr && innr->outr == this)
@@ -83,8 +83,8 @@ public:
         //主动删且无innr
     }
 public:
-    ShellPtr() {}
-    ShellPtr(ShellPtr<T> &o) {
+    ChainPtr() {}
+    ChainPtr(ChainPtr<T> &o) {
         if(o.innr != nullptr) {
             innr = o.innr;
 
@@ -95,25 +95,25 @@ public:
                 inext->ipriv = this;
         }
     }
-    ShellPtr(const ShellPtr<T> &o) {
+    ChainPtr(const ChainPtr<T> &o) {
         if(o.innr != nullptr){
             innr = o.innr;
 
-            ipriv = const_cast<ShellPtr<T>*>(&o);
+            ipriv = const_cast<ChainPtr<T>*>(&o);
             inext = o.inext;
-            const_cast<ShellPtr<T>*>(&o)->inext = this;
+            const_cast<ChainPtr<T>*>(&o)->inext = this;
             if(inext != nullptr)
                 inext->ipriv = this;
         }
     }
-    ShellPtr(CorePtr<T> *i) {
+    ChainPtr(ChainCore<T> *i) {
         if(i != nullptr){
             innr = i;
             innr->outr = this;
         }
     }
 
-    ShellPtr<T>& operator=(ShellPtr<T> &o) {
+    ChainPtr<T>& operator=(ChainPtr<T> &o) {
         if(innr != o.innr) {
             DelIn();
             if(o.innr != nullptr){
@@ -128,7 +128,7 @@ public:
         }
         return *this;
     }
-    ShellPtr<T>& operator=(ShellPtr<T> &&o) {
+    ChainPtr<T>& operator=(ChainPtr<T> &&o) {
         if(innr != o.innr) {
             DelIn();
             if(o.innr != nullptr){
@@ -143,7 +143,7 @@ public:
         }
         return *this;
     }
-    ShellPtr<T>& operator=(std::nullptr_t) {
+    ChainPtr<T>& operator=(std::nullptr_t) {
         DelIn();
         return *this;
     }
@@ -174,55 +174,64 @@ public:
     //TODO: 避免多继承
     template<typename _Tp,
         typename = typename std::enable_if<std::is_base_of<_Tp, T>::value, int>::type>
-    operator ShellPtr<_Tp>() {
-        return *(ShellPtr<_Tp>*)this;
+    operator ChainPtr<_Tp>() {
+        return *(ChainPtr<_Tp>*)this;
     }
 
-    friend bool operator==(const ShellPtr<T> &a, const ShellPtr<T> &b) {
+    friend bool operator==(const ChainPtr<T> &a, const ChainPtr<T> &b) {
         return a.innr == b.innr;
     }
-    friend bool operator==(const ShellPtr<T> &s, std::nullptr_t) {
+    friend bool operator==(const ChainPtr<T> &s, std::nullptr_t) {
         return s.innr == nullptr;
     }
-    friend bool operator==(std::nullptr_t, const ShellPtr<T> &s) {
+    friend bool operator==(std::nullptr_t, const ChainPtr<T> &s) {
         return s.innr == nullptr;
     }
 
-    friend bool operator!=(const ShellPtr<T> &a, const ShellPtr<T> &b) {
+    friend bool operator!=(const ChainPtr<T> &a, const ChainPtr<T> &b) {
         return a.innr != b.innr;
     }
-    friend bool operator!=(const ShellPtr<T> &s, std::nullptr_t) {
+    friend bool operator!=(const ChainPtr<T> &s, std::nullptr_t) {
         return s.innr != nullptr;
     }
-    friend bool operator!=(std::nullptr_t, const ShellPtr<T> &s) {
+    friend bool operator!=(std::nullptr_t, const ChainPtr<T> &s) {
         return s.innr != nullptr;
     }
 
 	//仅可用于 == this
-    friend bool operator!=(const ShellPtr<T> &a, const T *b) {
-        return a.innr != (CorePtr<T>*)b;
+    friend bool operator!=(const ChainPtr<T> &a, const T *b) {
+        return a.innr != (ChainCore<T>*)b;
     }
-    friend bool operator!=(const T *b, const ShellPtr<T> &a) {
-        return a.innr != (CorePtr<T>*)b;
+    friend bool operator!=(const T *b, const ChainPtr<T> &a) {
+        return a.innr != (ChainCore<T>*)b;
     }
-    friend bool operator==(const ShellPtr<T> &a, const T *b) {
-        return a.innr == (CorePtr<T>*)b;
+    friend bool operator==(const ChainPtr<T> &a, const T *b) {
+        return a.innr == (ChainCore<T>*)b;
     }
-    friend bool operator==(const T *b, const ShellPtr<T> &a) {
-        return a.innr == (CorePtr<T>*)b;
+    friend bool operator==(const T *b, const ChainPtr<T> &a) {
+        return a.innr == (ChainCore<T>*)b;
     }
 };
 
 template<typename>
-struct isShellPtr : public std::false_type {};
+struct isChainPtr : public std::false_type {};
 
 template<typename V>
-struct isShellPtr<ShellPtr<V>> : public std::true_type {};
+struct isChainPtr<ChainPtr<V>> : public std::true_type {
+    using type = V;
+};
 
+
+
+// template<typename>
+// std::false_type GetChainInnrType();
+
+// template<typename V>
+// V GetChainInnrType<ChainPtr<V>>();
 
 template<typename T, typename... _Args>
-inline ShellPtr<T> MakeShell(_Args&&... __args) {
-    return ShellPtr<T>(new CorePtr<T>(std::forward<_Args>(__args)...));
+inline ChainPtr<T> MakeChain(_Args&&... __args) {
+    return ChainPtr<T>(new ChainCore<T>(std::forward<_Args>(__args)...));
 }
 
 

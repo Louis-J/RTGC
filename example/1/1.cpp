@@ -16,7 +16,7 @@ class T3B;
 class T1B {
     string str;
 public:
-    ShellPtr<T1A> next;
+    ChainPtr<T1A> next;
     T1B(string str):str(str){
         cout << str << " construct\n";
     }
@@ -24,7 +24,7 @@ public:
         cout << str << " destruct\n";
     }
 public:
-    CLASSLINK(T1B, 2)
+    RTGC_AutoChainLink(T1B, 2)
 };
 
 class T1A {
@@ -38,7 +38,7 @@ public:
         cout << str << " destruct\n";
     }
 public:
-    CLASSLINK(T1A, 2)
+    RTGC_AutoChainLink(T1A, 2)
 };
 
 
@@ -95,8 +95,8 @@ public:
 int main() {
     cout << "RTGC:" << endl;
     {
-        ShellPtr<T1A> a1(MakeShell<T1A>("a1", "b1"));
-        ShellPtr<T1A> a2(MakeShell<T1A>("a2", "b2"));
+        ChainPtr<T1A> a1(MakeChain<T1A>("a1", "b1"));
+        ChainPtr<T1A> a2(MakeChain<T1A>("a2", "b2"));
         a1->next.next = a2;
         a2->next.next = a1;
     }

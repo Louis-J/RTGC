@@ -111,16 +111,16 @@ struct ListNodeB {
 };
 
 struct ListNodeC {
-    using TPtr = ShellPtr<ListNodeC>;
+    using TPtr = ChainPtr<ListNodeC>;
     static auto Alloc(int val) {
-        return MakeShell<ListNodeC>(val);
+        return MakeChain<ListNodeC>(val);
     }
 
     static size_t cnsNum;
     static size_t cnsNumMax;
-    CLASSLINK(ListNodeC, 2)
+    RTGC_AutoChainLink(ListNodeC, 2)
     int val;
-    ShellPtr<ListNodeC> next;
+    ChainPtr<ListNodeC> next;
     ListNodeC(int x) : val(x), next(NULL) {
         #if HAVE_CNS
         cnsNum ++;
@@ -128,22 +128,22 @@ struct ListNodeC {
             cnsNumMax = cnsNum;
         #endif
     }
-    static ShellPtr<ListNodeC> Create(initializer_list<int>& list) {
-        ShellPtr<ListNodeC> head(MakeShell<ListNodeC>(0));
-        ShellPtr<ListNodeC> next(head);
+    static ChainPtr<ListNodeC> Create(initializer_list<int>& list) {
+        ChainPtr<ListNodeC> head(MakeChain<ListNodeC>(0));
+        ChainPtr<ListNodeC> next(head);
         for(auto& i : list){
-            next->next = MakeShell<ListNodeC>(i);
+            next->next = MakeChain<ListNodeC>(i);
             next = next->next;
         }
         return head->next;
     }
-    friend ostream& operator<<(ostream& ostr, ShellPtr<ListNodeC>& l) {
+    friend ostream& operator<<(ostream& ostr, ChainPtr<ListNodeC>& l) {
         ostr << l->val;
         if(l->next != nullptr)
             ostr << "->" << l->next;
         return ostr;
     }
-    friend ostream& operator<<(ostream& ostr, ShellPtr<ListNodeC>&& l) {
+    friend ostream& operator<<(ostream& ostr, ChainPtr<ListNodeC>&& l) {
         ostr << l->val;
         if(l->next != nullptr)
             ostr << "->" << l->next;

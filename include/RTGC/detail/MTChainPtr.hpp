@@ -1,5 +1,5 @@
-#ifndef RTGC_DETAIL_COREPTR_HPP
-#define RTGC_DETAIL_COREPTR_HPP
+#ifndef RTGC_DETAIL_MTCHAINPTR_HPP
+#define RTGC_DETAIL_MTCHAINPTR_HPP
 
 #include<cstddef>
 #include<atomic>
@@ -7,19 +7,20 @@
 namespace RTGC { namespace detail {
 
 template<typename T>
-class ShellPtr;
+class MTChainPtr;
 
 //内层
 template<typename T>
-class CorePtr {
-    friend class ShellPtr<T>;
+class MTChainCore {
+    friend class MTChainPtr<T>;
     
     template<typename Tp, typename... _Args>
-    friend ShellPtr<Tp> MakeShell(_Args&&... __args);
+    friend MTChainPtr<Tp> MakeChain(_Args&&... __args);
     
     T real;
     bool valid = true;
-    ShellPtr<T> *outr = nullptr;//所有者结点
+    std::atomic_flag mInnr = ATOMIC_FLAG_INIT;
+    MTChainPtr<T> *outr = nullptr;//所有者结点
 
     [[gnu::always_inline]] void Invalidate() {//被动调用，此时this已上锁，且real需更新链
         valid = false;
@@ -50,7 +51,7 @@ class CorePtr {
         }
     }
     template<class... Args>
-    CorePtr(Args&&... args) :real(std::forward<Args>(args)...) {}
+    MTChainCore(Args&&... args) :real(std::forward<Args>(args)...) {}
 };
 
 }}
