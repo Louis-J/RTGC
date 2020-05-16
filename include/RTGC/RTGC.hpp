@@ -11,6 +11,7 @@
 #include"detail/MTCountPtr.hpp"
 
 #include"detail/LinkAnce.hpp"
+#include"detail/SmarterPtr.hpp"
 
 #include"detail/ChainCore.hpp"
 #include"detail/CountCore.hpp"
@@ -25,22 +26,47 @@
 
 namespace RTGC {
 
+// ChainPtr
 template<typename T>
 using ChainPtr = detail::ChainPtr<T>;
-
-template<typename T>
-using CountPtr = detail::CountPtr<T>;
 
 template<typename _Tp, typename... _Args>
 inline ChainPtr<_Tp> MakeChain(_Args&&... __args) {
     return detail::MakeChain<_Tp>(std::forward<_Args>(__args)...);
 }
 
+// CountPtr
+template<typename T>
+using CountPtr = detail::CountPtr<T>;
+
 template<typename _Tp, typename... _Args>
 inline CountPtr<_Tp> MakeCount(_Args&&... __args) {
     return detail::MakeCount<_Tp>(std::forward<_Args>(__args)...);
 }
 
+template<typename T>
+using MTCountPtr = detail::MTCountPtr<T>;
+
+template<typename _Tp, typename... _Args>
+inline MTCountPtr<_Tp> MakeMTCount(_Args&&... __args) {
+    return detail::MakeMTCount<_Tp>(std::forward<_Args>(__args)...);
+}
+
+// SmarterPtr
+template<typename T>
+using SmarterPtr = detail::SmarterPtr<T>;
+
+template<typename T, std::enable_if_t<T::RTGC_MayCirRef, int> = 0, typename... _Args>
+inline ChainPtr<T> MakeSmarter(_Args&&... __args) {
+    return detail::MakeChain<T>(std::forward<_Args>(__args)...);
+}
+
+template<typename T, std::enable_if_t<!T::RTGC_MayCirRef, int> = 0, typename... _Args>
+inline CountPtr<T> MakeSmarter(_Args&&... __args) {
+    return detail::MakeCount<T>(std::forward<_Args>(__args)...);
+}
+
+// OptimisedDestructionForChainPtr
 template<class... Args>
 constexpr void MakeOptimisedDes(Args&&... args) {
     detail::MakeOptimisedInvalidateImpl(std::tuple<Args&...>{args... }, std::index_sequence_for<Args...>{});

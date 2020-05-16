@@ -103,36 +103,39 @@ struct ListNodeB {
 };
 
 struct ListNodeC {
-    RTGC_AutoChainLink(ListNodeC, 2)
-    using TPtr = ChainPtr<ListNodeC>;
+    constexpr static bool RTGC_MayCirRef = true;
+    RTGC_AutoChainLink(ListNodeC, 2);
+    RTGC_AutoCRDetectIn(ListNodeC, 2);
+    
+    using TPtr = SmarterPtr<ListNodeC>;
     static auto Alloc(int val) {
         return MakeChain<ListNodeC>(val);
     }
 
     static size_t cnsNum;
     int val;
-    ChainPtr<ListNodeC> next;
+    SmarterPtr<ListNodeC> next;
     ListNodeC(int x) : val(x), next(NULL) {
         #if HAVE_CNS
         cnsNum ++;
         #endif
     }
-    static ChainPtr<ListNodeC> Create(initializer_list<int>& list) {
-        ChainPtr<ListNodeC> head(MakeChain<ListNodeC>(0));
-        ChainPtr<ListNodeC> next(head);
+    static SmarterPtr<ListNodeC> Create(initializer_list<int>& list) {
+        SmarterPtr<ListNodeC> head(MakeChain<ListNodeC>(0));
+        SmarterPtr<ListNodeC> next(head);
         for(auto& i : list){
             next->next = MakeChain<ListNodeC>(i);
             next = next->next;
         }
         return head->next;
     }
-    friend ostream& operator<<(ostream& ostr, ChainPtr<ListNodeC>& l) {
+    friend ostream& operator<<(ostream& ostr, SmarterPtr<ListNodeC>& l) {
         ostr << l->val;
         if(l->next != nullptr)
             ostr << "->" << l->next;
         return ostr;
     }
-    friend ostream& operator<<(ostream& ostr, ChainPtr<ListNodeC>&& l) {
+    friend ostream& operator<<(ostream& ostr, SmarterPtr<ListNodeC>&& l) {
         ostr << l->val;
         if(l->next != nullptr)
             ostr << "->" << l->next;
@@ -144,6 +147,7 @@ struct ListNodeC {
         #endif
     }
 };
+RTGC_AutoCRDetectOut(ListNodeC, ListNodeC::RTGC_MayCirRef);
 
 struct ListNodeD {
     using TPtr = CountPtr<ListNodeD>;
@@ -181,6 +185,48 @@ struct ListNodeD {
         return ostr;
     }
     ~ListNodeD() {
+        #if HAVE_DES
+        cnsNum --;
+        #endif
+    }
+};
+
+struct ListNodeE {
+    using TPtr = MTCountPtr<ListNodeE>;
+    static auto Alloc(int val) {
+        return MakeMTCount<ListNodeE>(val);
+    }
+
+    static size_t cnsNum;
+    int val;
+    MTCountPtr<ListNodeE> next;
+    ListNodeE(int x) : val(x), next(NULL) {
+        #if HAVE_CNS
+        cnsNum ++;
+        #endif
+    }
+    static MTCountPtr<ListNodeE> Create(initializer_list<int>& list) {
+        MTCountPtr<ListNodeE> head(MakeMTCount<ListNodeE>(0));
+        MTCountPtr<ListNodeE> next(head);
+        for(auto& i : list){
+            next->next = MakeMTCount<ListNodeE>(i);
+            next = next->next;
+        }
+        return head->next;
+    }
+    friend ostream& operator<<(ostream& ostr, MTCountPtr<ListNodeE>& l) {
+        ostr << l->val;
+        if(l->next != nullptr)
+            ostr << "->" << l->next;
+        return ostr;
+    }
+    friend ostream& operator<<(ostream& ostr, MTCountPtr<ListNodeE>&& l) {
+        ostr << l->val;
+        if(l->next != nullptr)
+            ostr << "->" << l->next;
+        return ostr;
+    }
+    ~ListNodeE() {
         #if HAVE_DES
         cnsNum --;
         #endif
@@ -244,6 +290,7 @@ size_t ListNodeA::cnsNum = 0;
 size_t ListNodeB::cnsNum = 0;
 size_t ListNodeC::cnsNum = 0;
 size_t ListNodeD::cnsNum = 0;
+size_t ListNodeE::cnsNum = 0;
 
 
 #define LOOPSIZE 200000
@@ -267,6 +314,7 @@ int main() {
             cout << "2: " << Solution<ListNodeB>().reverseKGroup(ListNodeB::Create(list), k) << endl;
             cout << "3: " << Solution<ListNodeC>().reverseKGroup(ListNodeC::Create(list), k) << endl;
             cout << "4: " << Solution<ListNodeD>().reverseKGroup(ListNodeD::Create(list), k) << endl;
+            cout << "5: " << Solution<ListNodeE>().reverseKGroup(ListNodeE::Create(list), k) << endl;
             cout << endl;
         }
     }
@@ -348,6 +396,25 @@ int main() {
     }
     cout << endl << "Press any key:";
     cin.get();
+    cout << "Test5" << endl;
+    {
+        const size_t memUse = getCurrentRSS();
+        boost::timer::cpu_timer t;
+        t.start();
+        for (int i = 0; i < LOOPSIZE; i++) {
+            for (auto &[list, k] : exams) {
+                // ListNodeE::Create(list);
+                Solution<ListNodeE>().reverseKGroup(ListNodeE::Create(list), k);
+            }
+        }
+        t.stop();
+        cout << "all : " << t.elapsed().wall/1000000 << "ms" << endl;   //输出：start()至调用此函数的经过时间
+        cout << "user : " << t.elapsed().user/1000000 << "ms" << endl;   //输出：start()至调用此函数的用户时间
+        cout << "system : " << t.elapsed().system/1000000 << "ms" << endl; //输出：start()至调用此函数的系统时间
+        cout << "memory use:" << getCurrentRSS() - memUse << endl;
+    }
+    cout << endl << "Press any key:";
+    cin.get();
     cout << "Construct Number:" << endl;
     {
         cout << "1: " << endl;
@@ -358,6 +425,8 @@ int main() {
         cout << ListNodeC::cnsNum << endl;
         cout << "4: " << endl;
         cout << ListNodeD::cnsNum << endl;
+        cout << "5: " << endl;
+        cout << ListNodeE::cnsNum << endl;
         cout << endl;
     }
 }

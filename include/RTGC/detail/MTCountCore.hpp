@@ -15,7 +15,7 @@ class MTCountCore {
     friend class MTCountPtr<T>;
     
     template<typename Tp, typename... _Args>
-    friend MTCountPtr<Tp> MakeCount(_Args&&... __args);
+    friend MTCountPtr<Tp> MakeMTCount(_Args&&... __args);
     
     std::atomic<size_t> rc = 0;
     T real;

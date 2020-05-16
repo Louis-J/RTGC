@@ -34,18 +34,21 @@ public:
     MTCountPtr() {}
     MTCountPtr(MTCountPtr<T> &o) {
         if(o.innr != nullptr) {
+            innr = o.innr;
             innr->rc++;
             innr = o.innr;
         }
     }
     MTCountPtr(const MTCountPtr<T> &o) {
         if(o.innr != nullptr) {
+            innr = o.innr;
             innr->rc++;
             innr = o.innr;
         }
     }
     MTCountPtr(MTCountCore<T> *i) {
         if(i != nullptr){
+            innr = i;
             innr->rc++;
             innr = i;
         }
@@ -55,6 +58,7 @@ public:
         if(innr != o.innr) {
             DelIn();
             if(o.innr != nullptr) {
+                innr = o.innr;
                 innr->rc++;
                 innr = o.innr;
             }
@@ -65,6 +69,7 @@ public:
         if(innr != o.innr) {
             DelIn();
             if(o.innr != nullptr) {
+                innr = o.innr;
                 innr->rc++;
                 innr = o.innr;
             }
@@ -111,26 +116,28 @@ public:
     }
 
 	//仅可用于 == this
-    // friend bool operator!=(const MTCountPtr<T> &a, const T *b) {
-    //     return a.innr != (MTCountCore<T>*)b - MTCountCore<T>*;
-    // }
-    // friend bool operator!=(const T *b, const MTCountPtr<T> &a) {
-    //     return a.innr != (MTCountCore<T>*)b;
-    // }
-    // friend bool operator==(const MTCountPtr<T> &a, const T *b) {
-    //     return a.innr == (MTCountCore<T>*)b;
-    // }
-    // friend bool operator==(const T *b, const MTCountPtr<T> &a) {
-    //     return a.innr == (MTCountCore<T>*)b;
-    // }
+    friend bool operator!=(const MTCountPtr<T> &a, const T *b) {
+        return a.innr != (MTCountCore<T>*)b;
+        // return a.innr != (MTCountCore<T>*)b - MTCountCore<T>*;
+    }
+    friend bool operator!=(const T *b, const MTCountPtr<T> &a) {
+        return a.innr != (MTCountCore<T>*)b;
+    }
+    friend bool operator==(const MTCountPtr<T> &a, const T *b) {
+        return a.innr == (MTCountCore<T>*)b;
+    }
+    friend bool operator==(const T *b, const MTCountPtr<T> &a) {
+        return a.innr == (MTCountCore<T>*)b;
+    }
 };
 
 template<typename>
 struct isMTCountPtr : public std::false_type {};
 
 template<typename V>
-struct isMTCountPtr<MTCountPtr<V>> : public std::true_type {};
-
+struct isMTCountPtr<MTCountPtr<V>> : public std::true_type {
+    using type = V;
+};
 
 template<typename T, typename... _Args>
 inline MTCountPtr<T> MakeMTCount(_Args&&... __args) {

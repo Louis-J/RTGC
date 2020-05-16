@@ -159,9 +159,13 @@ struct CirNodeC {
 };
 
 struct CirNodeD {
-    using TPtr = ChainPtr<CirNodeD>;
+    constexpr static bool RTGC_MayCirRef = true;
+    RTGC_AutoChainLink(CirNodeD, 2);
+    RTGC_AutoCRDetectIn(CirNodeD, 2);
+
+    using TPtr = SmarterPtr<CirNodeD>;
     static auto Alloc(int val) {
-        return MakeChain<CirNodeD>(val);
+        return MakeSmarter<CirNodeD>(val);
     }
 
     static size_t cnsNum;
@@ -179,10 +183,10 @@ struct CirNodeD {
         return n->val;
     }
     static TPtr Create(int num) {
-        TPtr head(MakeChain<CirNodeD>(0));
+        TPtr head(MakeSmarter<CirNodeD>(0));
         TPtr next(head);
         for(auto i = 0; i < num; i++) {
-            next->next = MakeChain<CirNodeD>(i);
+            next->next = MakeSmarter<CirNodeD>(i);
             next = next->next;
         }
         next->next = head->next;
@@ -207,17 +211,8 @@ struct CirNodeD {
         cnsNum --;
         #endif
     }
-    RTGC_AutoChainLink(CirNodeD, 2);
 };
-namespace RTGC { namespace detail {
-template<class T, class U, std::enable_if_t<RTGC_IsComplex<T>::value && std::is_same<T, CirNodeD>::value, int> = 0>
-constexpr bool CanReferTo() {
-    using V = decltype(std::declval<CirNodeD>().ToTuple());
-    return MakeCanReferTo<V, U>();
-}
-}}
-static constexpr bool Dcir = RTGC::detail::CanReferTo<CirNodeD, CirNodeD>();
-
+RTGC_AutoCRDetectOut(CirNodeD, CirNodeD::RTGC_MayCirRef);
 
 template<typename T>
 ostream& operator<<(ostream& ostr, vector<T>& v) {
@@ -246,9 +241,6 @@ constexpr size_t LOOPSIZE = 20000;
 using CirType = CirNodeD;
 
 int main() {
-    cout << Dcir << endl;
-    return 0;
-
     cout << "Result" << endl;
     for(auto i = 20; i < 50; i++) {
         auto l = CirType::Create(i);

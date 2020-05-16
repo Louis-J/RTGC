@@ -221,14 +221,6 @@ struct isChainPtr<ChainPtr<V>> : public std::true_type {
     using type = V;
 };
 
-
-
-// template<typename>
-// std::false_type GetChainInnrType();
-
-// template<typename V>
-// V GetChainInnrType<ChainPtr<V>>();
-
 template<typename T, typename... _Args>
 inline ChainPtr<T> MakeChain(_Args&&... __args) {
     return ChainPtr<T>(new ChainCore<T>(std::forward<_Args>(__args)...));

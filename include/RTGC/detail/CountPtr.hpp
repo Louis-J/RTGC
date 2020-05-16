@@ -34,18 +34,21 @@ public:
     CountPtr() {}
     CountPtr(CountPtr<T> &o) {
         if(o.innr != nullptr) {
+            innr = o.innr;
             innr->rc++;
             innr = o.innr;
         }
     }
     CountPtr(const CountPtr<T> &o) {
         if(o.innr != nullptr) {
+            innr = o.innr;
             innr->rc++;
             innr = o.innr;
         }
     }
     CountPtr(CountCore<T> *i) {
         if(i != nullptr){
+            innr = i;
             innr->rc++;
             innr = i;
         }
@@ -55,6 +58,7 @@ public:
         if(innr != o.innr) {
             DelIn();
             if(o.innr != nullptr) {
+                innr = o.innr;
                 innr->rc++;
                 innr = o.innr;
             }
@@ -65,6 +69,7 @@ public:
         if(innr != o.innr) {
             DelIn();
             if(o.innr != nullptr) {
+                innr = o.innr;
                 innr->rc++;
                 innr = o.innr;
             }
@@ -111,26 +116,28 @@ public:
     }
 
 	//仅可用于 == this
-    // friend bool operator!=(const CountPtr<T> &a, const T *b) {
-    //     return a.innr != (CountCore<T>*)b - CountCore<T>*;
-    // }
-    // friend bool operator!=(const T *b, const CountPtr<T> &a) {
-    //     return a.innr != (CountCore<T>*)b;
-    // }
-    // friend bool operator==(const CountPtr<T> &a, const T *b) {
-    //     return a.innr == (CountCore<T>*)b;
-    // }
-    // friend bool operator==(const T *b, const CountPtr<T> &a) {
-    //     return a.innr == (CountCore<T>*)b;
-    // }
+    friend bool operator!=(const CountPtr<T> &a, const T *b) {
+        return a.innr != (CountCore<T>*)b;
+        // return a.innr != (CountCore<T>*)b - CountCore<T>*;
+    }
+    friend bool operator!=(const T *b, const CountPtr<T> &a) {
+        return a.innr != (CountCore<T>*)b;
+    }
+    friend bool operator==(const CountPtr<T> &a, const T *b) {
+        return a.innr == (CountCore<T>*)b;
+    }
+    friend bool operator==(const T *b, const CountPtr<T> &a) {
+        return a.innr == (CountCore<T>*)b;
+    }
 };
 
 template<typename>
 struct isCountPtr : public std::false_type {};
 
 template<typename V>
-struct isCountPtr<CountPtr<V>> : public std::true_type {};
-
+struct isCountPtr<CountPtr<V>> : public std::true_type {
+    using type = V;
+};
 
 template<typename T, typename... _Args>
 inline CountPtr<T> MakeCount(_Args&&... __args) {

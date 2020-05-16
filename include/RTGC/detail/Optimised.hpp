@@ -29,11 +29,6 @@ constexpr void MakeOptimisedTryValidateImpl(const Tuple& t, std::index_sequence<
     (MakeOptimisedTryValidateOne(std::get<Is>(t)), ...);
 }
 
-// template<class... Args>
-// constexpr void MakeOptimisedDes(Args&&... args) {
-//     MakeOptimisedInvalidateImpl(std::tuple<Args&...>{args... }, std::index_sequence_for<Args...>{});
-//     MakeOptimisedTryValidateImpl(std::tuple<Args&...>{args... }, std::index_sequence_for<Args...>{});
-// }
 
 }}
 

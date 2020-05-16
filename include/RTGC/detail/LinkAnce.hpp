@@ -200,13 +200,7 @@ constexpr bool MakeCanReferToOne() {
 
 template<class Tuple, class U, std::size_t... Is>
 constexpr bool MakeCanReferToImpl(std::index_sequence<Is...>) {
-    // return (MakeCanReferToOne<U>(std::get<Is>(t)) || ...);
     return (MakeCanReferToOne<std::remove_reference_t<typename std::tuple_element<Is, Tuple>::type>, U>() || ...);
-    // using T0s = typename std::tuple_element<0, Tuple>::type;
-    // using T0 = std::remove_reference_t<T0s>;
-    // return MakeCanReferToOne<std::remove_reference_t<typename std::tuple_element<0, Tuple>::type>, U>() ||
-    //         MakeCanReferToOne<std::remove_reference_t<typename std::tuple_element<1, Tuple>::type>, U>();
-    // return (MakeCanReferToOne<std::tuple_element<Is, T>::type, U>() || ...);
 }
 
 template<class Tuple, class U>
