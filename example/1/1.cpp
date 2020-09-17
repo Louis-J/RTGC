@@ -6,6 +6,8 @@
 using namespace std;
 using namespace RTGC;
 
+// 稍复杂的示意, 展示了多层嵌套时循环引用的情况
+
 class T1A;
 class T1B;
 class T2A;

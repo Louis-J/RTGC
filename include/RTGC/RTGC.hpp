@@ -83,9 +83,9 @@ friend struct RTGC::detail::ToTuple<thisT>;                                     
     auto &&tieTuple = RTGC::detail::ToTuple<thisT>::TieToTuple(*this, RTGC::detail::const_size_t<mNum>());                     \
     RTGC::detail::MakeInvalidate(tieTuple);                                                                                    \
 }                                                                                                                              \
-[[gnu::always_inline]] constexpr inline void TryValidate(bool &valid) {                                                        \
+[[gnu::always_inline]] constexpr inline void TryValidate(bool &invalid) {                                                        \
     auto &&tieTuple = RTGC::detail::ToTuple<thisT>::TieToTuple(*this, RTGC::detail::const_size_t<mNum>());                     \
-    RTGC::detail::MakeTryValidate(valid, tieTuple);                                                                            \
+    RTGC::detail::MakeTryValidate(invalid, tieTuple);                                                                            \
 }
 
 #define RTGC_AutoCRDetectIn(cName, mNum)                                                                                       \

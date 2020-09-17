@@ -31,27 +31,6 @@ constexpr void MakeInvalidate(const std::tuple<Args...>& t)
 }
 
 
-// template<typename U, typename... Args>
-// auto LeafNode(int) -> decltype(std::declval<U>::LeafNode());
-
-// template<typename U>
-// std::false_type LeafNode(...);
-
-// template<class MB>
-// constexpr auto CheckLeafNodeOne(MB &mb) -> LeafNode<MB>::LeafNode() {}
-
-// template<class Tuple, std::size_t... Is>
-// constexpr auto CheckLeafNodeImpl(const Tuple& t, std::index_sequence<Is...>) {
-//     return (CheckLeafNodeOne(std::get<Is>(t)), ...);
-// }
-
-// template<class... Args>
-// constexpr auto CheckLeafNode(const std::tuple<Args...>& t)
-// {
-//     CheckLeafNodeImpl(t, n, o, std::index_sequence_for<Args...>{});
-// }
-
-
 
 template<typename U, typename... Args>
 auto haveTryValidate(bool tmp) -> decltype(std::declval<U>().TryValidate(tmp), std::true_type());
@@ -60,21 +39,21 @@ template<typename U>
 std::false_type haveTryValidate(...);
 
 template<class MB>
-constexpr void MakeTryValidateOne(MB &mb, bool &valid) {
+constexpr void MakeTryValidateOne(MB &mb, bool &invalid) {
     if constexpr(decltype(haveTryValidate<MB>(0))::value) {
-        mb.TryValidate(valid);
+        mb.TryValidate(invalid);
     }
 }
 
 template<class Tuple, std::size_t... Is>
-constexpr void MakeTryValidateImpl(const Tuple& t, bool &valid, std::index_sequence<Is...>) {
-    (MakeTryValidateOne(std::get<Is>(t), valid), ...);
+constexpr void MakeTryValidateImpl(const Tuple& t, bool &invalid, std::index_sequence<Is...>) {
+    (MakeTryValidateOne(std::get<Is>(t), invalid), ...);
 }
 
 template<class... Args>
-constexpr void MakeTryValidate(bool &valid, const std::tuple<Args...>& t)
+constexpr void MakeTryValidate(bool &invalid, const std::tuple<Args...>& t)
 {
-    MakeTryValidateImpl(t, valid, std::index_sequence_for<Args...>{});
+    MakeTryValidateImpl(t, invalid, std::index_sequence_for<Args...>{});
 }
 
 
@@ -170,18 +149,18 @@ constexpr bool CanReferTo() {
 
 
 // template<class U, class MB>
-// constexpr bool MakeCanReferToOne(MB &mb, bool &valid) {
+// constexpr bool MakeCanReferToOne(MB &mb, bool &invalid) {
 //     if constexpr(std::is_same<MB, U>::value)
 //         return true;
 //     else
 //         return CanReferTo<MB, U>();
 //     // if constexpr(decltype(haveCanReferTo<MB>(0))::value) {
-//     //     mb.CanReferTo(valid);
+//     //     mb.CanReferTo(invalid);
 //     // }
 // }
 
 // template<class U, class Tuple, std::size_t... Is>
-// constexpr bool MakeCanReferToImpl(const Tuple& t, bool &valid, std::index_sequence<Is...>) {
+// constexpr bool MakeCanReferToImpl(const Tuple& t, bool &invalid, std::index_sequence<Is...>) {
 //     return (MakeCanReferToOne<U>(std::get<Is>(t)) || ...);
 // }
 

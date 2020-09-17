@@ -15,6 +15,8 @@ void * makeTCMallocUsed = tc_malloc(4);
 using namespace std;
 using namespace RTGC;
 
+// 稍复杂的示意, 以LeetCode 0025展示了不同指针下的链表操作的性能
+
 #define HAVE_CNS 1
 #define HAVE_DES 0
 
@@ -57,6 +59,8 @@ struct ListNodeA {
         #if HAVE_DES
         cnsNum --;
         #endif
+        if(next)
+            delete next;
     }
 };
 
@@ -208,7 +212,7 @@ struct ListNodeE {
     static MTCountPtr<ListNodeE> Create(initializer_list<int>& list) {
         MTCountPtr<ListNodeE> head(MakeMTCount<ListNodeE>(0));
         MTCountPtr<ListNodeE> next(head);
-        for(auto& i : list){
+        for(auto& i : list) {
             next->next = MakeMTCount<ListNodeE>(i);
             next = next->next;
         }
@@ -320,7 +324,7 @@ int main() {
     }
     cout << endl << "Press any key:";
     cin.get();
-    cout << "Test1" << endl;
+    cout << "Test1: ListNodeA*" << endl;
     {
         const size_t memUse = getCurrentRSS();
         boost::timer::cpu_timer t;
@@ -328,7 +332,7 @@ int main() {
         for (int i = 0; i < LOOPSIZE; i++) {
             for (auto &[list, k] : exams) {
                 // ListNodeA::Create(list);
-                Solution<ListNodeA>().reverseKGroup(ListNodeA::Create(list), k);
+                delete Solution<ListNodeA>().reverseKGroup(ListNodeA::Create(list), k);
             }
         }
         t.stop();
@@ -339,7 +343,7 @@ int main() {
     }
     cout << endl << "Press any key:";
     cin.get();
-    cout << "Test2" << endl;
+    cout << "Test2: shared_ptr<ListNodeB>" << endl;
     {
         const size_t memUse = getCurrentRSS();
         boost::timer::cpu_timer t;
@@ -358,7 +362,7 @@ int main() {
     }
     cout << endl << "Press any key:";
     cin.get();
-    cout << "Test3" << endl;
+    cout << "Test3: ChainPtr<ListNodeC>" << endl;
     {
         const size_t memUse = getCurrentRSS();
         boost::timer::cpu_timer t;
@@ -377,7 +381,7 @@ int main() {
     }
     cout << endl << "Press any key:";
     cin.get();
-    cout << "Test4" << endl;
+    cout << "Test4: CountPtr<ListNodeD>" << endl;
     {
         const size_t memUse = getCurrentRSS();
         boost::timer::cpu_timer t;
@@ -396,7 +400,7 @@ int main() {
     }
     cout << endl << "Press any key:";
     cin.get();
-    cout << "Test5" << endl;
+    cout << "Test5: MTCountPtr<ListNodeE>" << endl;
     {
         const size_t memUse = getCurrentRSS();
         boost::timer::cpu_timer t;

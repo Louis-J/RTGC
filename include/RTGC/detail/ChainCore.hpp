@@ -18,21 +18,21 @@ class ChainCore {
     friend ChainPtr<Tp> MakeChain(_Args&&... __args);
     
     T real;
-    bool valid = true;
-    ChainPtr<T> *outr = nullptr;//所有者结点
+    bool invalid = false;
+    mutable const ChainPtr<T> *outr = nullptr;//所有者结点
 
     [[gnu::always_inline]] void Invalidate() {//被动调用，此时this已上锁，且real需更新链
-        valid = false;
+        invalid = true;
         if constexpr(decltype(haveInvalidate<T>(0))::value) {
             real.Invalidate();
         }
     }
     [[gnu::always_inline]] void TryValidate() {//被动调用，此时this已上锁，且real需更新链
-        if(outr->valid) {
-            valid = true;
+        if(!outr->invalid) {
+            invalid = false;
         } else for(auto i = outr->inext; i != nullptr; i = i->inext) {
-            if(i->valid) {
-                valid = true;
+            if(!i->invalid) {
+                invalid = false;
                 auto ip = i->ipriv, in = i->inext;
                 ip->inext = in;
                 if(in != nullptr) {
@@ -46,7 +46,7 @@ class ChainCore {
             }
         }
         if constexpr(decltype(haveTryValidate<T>(0))::value) {
-            real.TryValidate(valid);
+            real.TryValidate(invalid);
         }
     }
     template<class... Args>

@@ -14,6 +14,8 @@ void * makeTCMallocUsed = tc_malloc(4);
 using namespace std;
 using namespace RTGC;
 
+// 稍复杂的示意, 以一个循环链表操作展示了性能及内存泄漏情况
+
 #define HAVE_CNS 1
 #define HAVE_DES 0
 

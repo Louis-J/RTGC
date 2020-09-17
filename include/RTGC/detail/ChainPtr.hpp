@@ -13,9 +13,9 @@ template<typename T>
 class ChainPtr {
     friend class ChainCore<T>;
 private:
-    bool valid = true;
+    bool invalid = false;
     ChainCore<T> *innr = nullptr;//指向的内节点，即指向的堆地址
-    ChainPtr<T> *ipriv = nullptr, *inext = nullptr;//子层上一结点,下一结点
+    mutable const ChainPtr<T> *ipriv = nullptr, *inext = nullptr;//子层上一结点,下一结点
     
     void EraseMin() {
         if(ipriv != nullptr)
@@ -23,57 +23,83 @@ private:
         if(inext != nullptr)
             inext->ipriv = ipriv;
     }
-    void Erase() {
-        if(ipriv != nullptr)
-            ipriv->inext = inext;
-        if(inext != nullptr)
-            inext->ipriv = ipriv;
-        ipriv = nullptr;
-        inext = nullptr;
-    }
     //判断是否删除内层
     void DelIn() {
         if(innr != nullptr) {//主动删且有innr，此时this未上锁，innr未上锁
             if(innr->outr == this) {//有强引用innr，需更新链
-                valid = false;
+                invalid = true;
                 innr->Invalidate();
                 innr->TryValidate();
-                Erase();
-                if(innr->outr == this && !innr->valid) {//innr废弃
+                EraseMin();
+                ipriv = nullptr;
+                inext = nullptr;
+                if(innr->outr == this && innr->invalid) {//innr废弃
                     delete innr;
                 }
-                valid = true;
+                invalid = false;
             } else {//无强引用innr
-                Erase();
+                EraseMin();
+                ipriv = nullptr;
+                inext = nullptr;
             }
             innr = nullptr;
         }
     }
 public:
     void IN2() {
-        if(valid && innr != nullptr && innr->outr == this) {
-            valid = false;
+        if(!invalid && innr != nullptr && innr->outr == this) {
+            invalid = true;
             innr->Invalidate();
         }
     }
     void TR2() {
-        if(!valid) {
+        if(invalid) {
             innr->TryValidate();
         }
     }
 
+    // ~ChainPtr() {
+    //     if(invalid) {//被动删，此时this上锁，innr上锁
+    //         if(ipriv != nullptr && !ipriv->invalid)
+    //             ipriv->inext = inext;
+    //         if(inext != nullptr && !inext->invalid)
+    //             inext->ipriv = ipriv;
+    //         if(innr != nullptr && innr->outr == this)
+    //             delete innr;
+    //     } else if(innr != nullptr) {//主动删且有innr，此时this未上锁，innr未上锁
+    //         if(innr->outr == this) {//有强引用innr，需更新链
+    //             invalid = true;
+    //             innr->Invalidate();
+    //             innr->TryValidate();
+    //             if(innr->outr == this && innr->invalid) {//innr废弃
+    //                 delete innr;
+    //             } else {
+    //                 if(ipriv != nullptr && !ipriv->invalid)
+    //                     ipriv->inext = inext;
+    //                 if(inext != nullptr && !inext->invalid)
+    //                     inext->ipriv = ipriv;
+    //             }
+    //         } else {//无强引用innr
+    //             if(ipriv != nullptr && !ipriv->invalid)
+    //                 ipriv->inext = inext;
+    //             if(inext != nullptr && !inext->invalid)
+    //                 inext->ipriv = ipriv;
+    //         }
+    //     }
+    //     //主动删且无innr
+    // }
     ~ChainPtr() {
-        if(!valid) {//被动删，此时this上锁，innr上锁
+        if(invalid) {//被动删，此时this上锁，innr上锁
             EraseMin();
             if(innr != nullptr && innr->outr == this)
                 delete innr;
         } else if(innr != nullptr) {//主动删且有innr，此时this未上锁，innr未上锁
             if(innr->outr == this) {//有强引用innr，需更新链
-                valid = false;
+                invalid = true;
                 innr->Invalidate();
                 innr->TryValidate();
                 EraseMin();
-                if(innr->outr == this && !innr->valid) {//innr废弃
+                if(innr->outr == this && innr->invalid) {//innr废弃
                     delete innr;
                 }
             } else {//无强引用innr
@@ -84,24 +110,35 @@ public:
     }
 public:
     ChainPtr() {}
-    ChainPtr(ChainPtr<T> &o) {
+    // ChainPtr(ChainPtr<T> &o) {
+    //     if(o.innr != nullptr) {
+    //         innr = o.innr;
+
+    //         ipriv = &o;
+    //         inext = o.inext;
+    //         o.inext = this;
+    //         if(inext != nullptr)
+    //             inext->ipriv = this;
+    //     }
+    // }
+    // ChainPtr(const ChainPtr<T> &o) {
+    //     if(o.innr != nullptr){
+    //         innr = o.innr;
+
+    //         ipriv = const_cast<ChainPtr<T>*>(&o);
+    //         inext = o.inext;
+    //         const_cast<ChainPtr<T>*>(&o)->inext = this;
+    //         if(inext != nullptr)
+    //             inext->ipriv = this;
+    //     }
+    // }
+    ChainPtr(const ChainPtr<T> &o) {
         if(o.innr != nullptr) {
             innr = o.innr;
 
             ipriv = &o;
             inext = o.inext;
             o.inext = this;
-            if(inext != nullptr)
-                inext->ipriv = this;
-        }
-    }
-    ChainPtr(const ChainPtr<T> &o) {
-        if(o.innr != nullptr){
-            innr = o.innr;
-
-            ipriv = const_cast<ChainPtr<T>*>(&o);
-            inext = o.inext;
-            const_cast<ChainPtr<T>*>(&o)->inext = this;
             if(inext != nullptr)
                 inext->ipriv = this;
         }
@@ -149,17 +186,17 @@ public:
     }
 
     void Invalidate() {//被动调用，此时this未上锁，innr已上锁，且innr需更新链
-        valid = false;
+        invalid = true;
         if(innr != nullptr && innr->outr == this)
             innr->Invalidate();
     }
-    void TryValidate(bool &pValid) {
-        if(!pValid) {
+    void TryValidate(bool &pInvalid) {
+        if(pInvalid) {
             if(innr != nullptr && innr->outr == this)
                 innr->TryValidate();
         } else {
-            this->valid = true;
-            if(innr != nullptr && !innr->valid)
+            this->invalid = false;
+            if(innr != nullptr && innr->invalid)
                 innr->TryValidate();
         }
     }

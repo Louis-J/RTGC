@@ -6,11 +6,14 @@
 using namespace std;
 using namespace RTGC;
 
+// 简单示意, 比较了RTGC/shared_ptr/unique_ptr的安全性
+
 class T1 {//use RTGC
 private:
     string str;
 public:
-    ChainPtr<T1> next;
+    constexpr static bool RTGC_MayCirRef = true;
+    SmarterPtr<T1> next;
     T1(string &&str):str(str){
         cout << str << " construct\n";
     }
@@ -22,23 +25,6 @@ public:
     RTGC_AutoCRDetectIn(T1, 2);
 };
 RTGC_AutoCRDetectOut(T1, true);
-
-class T0 {//use RTGC
-private:
-    string str;
-public:
-    T0(string &&str):str(str){
-        cout << str << " construct\n";
-    }
-    ~T0() {
-        cout << str << " destruct\n";
-    }
-public:
-    RTGC_AutoChainLink(T0, 1);
-    RTGC_AutoCRDetectIn(T0, 1);
-};
-RTGC_AutoCRDetectOut(T0, false);
-
 
 class T2 {//use shared_ptr
 private:

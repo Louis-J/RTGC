@@ -93,7 +93,9 @@
 			"locale": "cpp",
 			"queue": "cpp",
 			"stack": "cpp",
-			"__functional_base_03": "cpp"
+			"__functional_base_03": "cpp",
+			"__functional_03": "cpp",
+			"ranges": "cpp"
 		},
 		"C_Cpp.default.configurationProvider": "vector-of-bool.cmake-tools",
 		"cmake.cmakePath": "F:/Program/ProMaker/CCPP/Compiler/cmake/bin/cmake.exe",

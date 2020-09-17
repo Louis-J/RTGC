@@ -12,6 +12,8 @@ using namespace boost::variant2;
 using namespace std;
 using namespace RTGC;
 
+// 稍复杂的示意, 展示了多线程时循环引用的情况
+
 constexpr int ThreadNum = 50;
 constexpr int ArrayNum = 1000;
 constexpr int LoopNum = 100;
@@ -25,12 +27,12 @@ public:
     ChainPtr<T1> next;
     T1() {
         cnsNum++;
-        // cout << "construct\n";
+        cout << "construct\n";
     }
     
     ~T1() {
         desNum++;
-        // cout << "destruct\n";
+        cout << "destruct\n";
     }
 };
 size_t T1::cnsNum = 0;

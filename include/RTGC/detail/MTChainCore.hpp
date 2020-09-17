@@ -6,265 +6,303 @@
 
 namespace RTGC { namespace detail {
 
-// 前提: 同一个MTChainPtr不会由多个线程同时拥有
-// 假设: 拥有A B, 同时指向C，保证多线程安全, A拥有C的所有权
-//       =>不存在A、B同时对C操作的情况(C保证线程安全，同一时刻仅由一个线程访问)
-// 特点: 对指向同一个MTChainCore的MTChainPtr，同一时刻仅有一个线程可以释放
-//       操作时，标记为invalid后释放所有权，防止死锁; 因此其他线程可以对invalid的节点进行操作
-//       TryValidate会有逆向扫描，通过破坏"保持"条件解决死锁
-// 场景: 1. A正在释放, 要转移至B; B正valid，未删除
-//       2. B正在释放          ; A正valid，未删除
-//       3. A准备释放, 要转移至B; B正在释放, 已invalid，暂未删除(Invalidate/TryValidate)
-//       4. B准备释放          ; A正在释放, 已invalid，暂未删除(Invalidate)
-//       5. B准备释放          ; A正在释放, 已invalid，暂未删除(TryValidate)
-
 template<typename T>
-class MTChainCore;
+class MTChainPtr;
 
+//内层
 template<typename T>
-class MTChainPtr {
-    friend class MTChainCore<T>;
-private:
-    bool valid = true;
-    std::atomic_flag mOutr = ATOMIC_FLAG_INIT;
-    MTChainCore<T> *innr = nullptr;//指向的内节点，即指向的堆地址
-    MTChainPtr<T> *ipriv = nullptr, *inext = nullptr;//子层上一结点,下一结点
+class MTChainCore {
+    friend class MTChainPtr<T>;
     
-    void EraseMin() {
-        if(ipriv != nullptr)
-            ipriv->inext = inext;
-        if(inext != nullptr)
-            inext->ipriv = ipriv;
-    }
-    void Erase() {
-        if(ipriv != nullptr)
-            ipriv->inext = inext;
-        if(inext != nullptr)
-            inext->ipriv = ipriv;
-        ipriv = nullptr;
-        inext = nullptr;
-    }
-    //判断是否删除内层
-    void DelIn() {
-        if(innr != nullptr) {//主动删且有innr，此时this未上锁，innr未上锁
-            if(innr->outr == this) {//有强引用innr，需更新链
-                valid = false;
-                innr->Invalidate();
-                innr->TryValidate();
-                Erase();
-                if(innr->outr == this && !innr->valid) {//innr废弃
-                    delete innr;
-                }
-                valid = true;
-            } else {//无强引用innr
-                Erase();
-            }
-            innr = nullptr;
-        }
-    }
-    enum class MutexStatus: unsigned char {
-        Fail,
-        One,
-        Two,
-    };
-    MutexStatus TryMutexDouble() {
-        while(mOutr.test_and_set());
-        if(innr == nullptr) {
-            return MutexStatus::One;
-        }
-        if(innr->mInnr.test_and_set()) {//未得到mInnr
-            mOutr.clear();
-            return MutexStatus::Fail;
-        } else {//得到mInnr
-            return MutexStatus::Two;
-        }
-    }
-    MutexStatus GetMutexDouble() {
-        MutexStatus ret = TryMutexDouble();
-        while(ret == MutexStatus::Fail) {
-            ret = TryMutexDouble();
-        }
-        return ret;
-    }
-public:
-    ~MTChainPtr() {
-        if(GetMutexDouble() == MutexStatus::One) {//仅一个锁，说明指向nullptr，应链表、内部均为空
-            mOutr.clear();
-            return;
-        }
-        //两个锁，说明指向!nullptr，此时this上锁，innr上锁
-        if(!valid) {//被动删
-            EraseMin();
-            if(innr != nullptr && innr->outr == this)
-                delete innr;
-        } else if(innr != nullptr) {//主动删且有innr，此时this未上锁，innr未上锁
-            if(innr->outr == this) {//有强引用innr，需更新链
-                valid = false;
-                innr->Invalidate();
-                innr->TryValidate();
-                if(innr->outr == this && !innr->valid) {//innr废弃
-                    EraseMin();
-                    delete innr;
-                } else {//innr更新
-                    Erase();
-                }
-            } else {//无强引用innr
-                EraseMin();
-            }
-        }
-        //主动删且无innr
-    }
-public:
-    MTChainPtr() {}
-    MTChainPtr(MTChainPtr<T> &o) {
-        if(o.innr != nullptr) {
-            while(o.mOutr.test_and_set());
-            innr = o.innr;
+    template<typename Tp, typename... _Args>
+    friend MTChainPtr<Tp> MakeChain(_Args&&... __args);
+    
+    T real;
+    size_t invalid = 0;// 0 为存活, 非0为将亡时删除的起始标记，用来区别不同线程
+    std::atomic_flag mInnr = ATOMIC_FLAG_INIT;
+    MTChainPtr<T> *outr = nullptr;//所有者结点
 
-            ipriv = &o;
-            inext = o.inext;
-            o.inext = this;
-            if(inext != nullptr)
-                inext->ipriv = this;
-            o.mOutr.clear();
+    [[gnu::always_inline]] void MTLockSub(size_t tag) {//被动调用，此时outr已上锁, this已上锁，且real需更新链
+        if constexpr(decltype(haveMTInvalidate<T>(0))::value) {
+            while(mInnr.test_and_set()); //得到mInnr
         }
     }
-    MTChainPtr(const MTChainPtr<T> &o) {
-        if(o.innr != nullptr){
-            while(o.mOutr.test_and_set());
-            innr = o.innr;
-
-            ipriv = const_cast<MTChainPtr<T>*>(&o);
-            inext = o.inext;
-            const_cast<MTChainPtr<T>*>(&o)->inext = this;
-            if(inext != nullptr)
-                inext->ipriv = this;
-            o.mOutr.clear();
+    [[gnu::always_inline]] void MTInvalidate(size_t tag) {//被动调用，此时outr已上锁, this已上锁，且real需更新链
+        invalid = tag;
+        if constexpr(decltype(haveMTInvalidate<T>(0))::value) {
+            real.MTLockSub()
+            mInnr.clear();
+            real.MTInvalidate(tag);
         }
     }
-    MTChainPtr(MTChainCore<T> *i) {
-        if(i != nullptr){
-            innr = i;
-            innr->outr = this;
-        }
-    }
-
-    MTChainPtr<T>& operator=(MTChainPtr<T> &o) {
-        if(innr != o.innr) {
-            DelIn();
-            while(o.mOutr.test_and_set());
-            if(o.innr != nullptr){
-                innr = o.innr;
-                
-                ipriv = &o;
-                inext = o.inext;
-                o.inext = this;
-                if(inext != nullptr)
-                    inext->ipriv = this;
+    [[gnu::always_inline]] void MTTryValidate() {//被动调用，此时outr已上锁, this已上锁，且real需更新链
+        if(outr->invalid == 0) {// 由已存活的outr调用
+            invalid = 0;
+            outr->mOutr.clear();
+        } else if(outr->inext == nullptr) {
+            if(outr->invalid != invalid) {// 由已存活的outr调用
+                invalid = outr->invalid;
             }
-            o.mOutr.clear();
-        }
-        return *this;
-    }
-    MTChainPtr<T>& operator=(MTChainPtr<T> &&o) {
-        if(innr != o.innr) {
-            DelIn();
-            while(o.mOutr.test_and_set());
-            if(o.innr != nullptr){
-                innr = o.innr;
-                
-                ipriv = &o;
-                inext = o.inext;
-                o.inext = this;
-                if(inext != nullptr)
-                    inext->ipriv = this;
-            }
-            o.mOutr.clear();
-        }
-        return *this;
-    }
-    MTChainPtr<T>& operator=(std::nullptr_t) {
-        DelIn();
-        return *this;
-    }
-
-    void Invalidate() {//被动调用，此时this未上锁，innr已上锁，且innr需更新链
-        valid = false;
-        if(innr != nullptr && innr->outr == this)
-            innr->Invalidate();
-    }
-    void TryValidate(bool &pValid) {
-        if(!pValid) {
-            if(innr != nullptr && innr->outr == this)
-                innr->TryValidate();
+            outr->mOutr.clear();
         } else {
-            this->valid = true;
-            if(innr != nullptr && !innr->valid)
-                innr->TryValidate();
+            MTChainPtr<T> *j = nullptr; //用于存储首个可连接到其他线程的节点
+            if(outr->invalid != invalid)
+                j = outr;
+            for(auto i = outr->inext; ; i = i->inext) {
+                while(i->mOutr.test_and_set());
+                if(i->invalid == 0) {
+                    if(j) {
+                        if(j == outr->inext) {
+                            j->mOutr.clear();
+                        } else if(j == i->priv) {
+                            j->priv->mOutr.clear();
+                        } else {
+                            j->mOutr.clear();
+                            j->priv->mOutr.clear();
+                        }
+                    }
+                    auto ip = i->ipriv, in = i->inext;
+                    ip->inext = in;
+                    if(in != nullptr) {
+                        while(in->mOutr.test_and_set());
+                        in->ipriv = ip;
+                        in->mOutr.clear();
+                    }
+                    if(ip != outr)
+                        ip->mOutr.clear();
+                    i->ipriv = nullptr;
+                    i->inext = outr;
+                    outr->ipriv = i;
+                    // outr = i;
+                    std::swap(outr, i);
+                    outr->mOutr.clear();
+                    i->mOutr.clear();
+                    break;
+                } else if(j == nullptr && i->invalid != invalid)
+                    j = i;
+                if(i != j && i->ipriv != j && i->ipriv != outr)
+                    i->ipriv.mOutr.clear();
+                if(i->inext = nullptr) {
+                    if(j != i)
+                        i->mOutr.clear();
+                    if(j) { //存在j
+                        MTChainPtr<T> *minPtr = (MTChainPtr<T> *)min(invalid, j->invalid);
+                        minPtr
+
+                        if(j == outr->inext) {
+                            outr->inext = j->inext;
+                            outr->ipriv = j->ipriv;
+                            j->inext = outr;
+                            j->ipriv = nullptr;
+                            if(outr->inext != nullptr) {
+                                while(outr->inext->mOutr.test_and_set());
+                                outr->inext->ipriv = outr;
+                                outr->inext->mOutr.clear();
+                            }
+                            std::swap(outr, j);
+                            outr->mOutr.clear();
+                            j->mOutr.clear();
+                        } else {
+                            auto jp = j->ipriv, jn = j->inext;
+                            jp->inext = jn;
+                            if(jn != nullptr) {
+                                while(jn->mOutr.test_and_set());
+                                jn->ipriv = jp;
+                                jn->mOutr.clear();
+                            }
+                            jp->mOutr.clear();
+                            outr->ipriv = j;
+                            j->inext = outr;
+                            j->ipriv = nullptr;
+                            // outr = j;
+                            std::swap(outr, j);
+                            outr->mOutr.clear();
+                            j->mOutr.clear();
+                        }
+                    } else { //不存在j
+                        outr->mOutr.clear();
+                    }
+                }
+            }
         }
-    }
+        if constexpr(decltype(haveMTTryValidate<T>(0))::value) {
+            real.MTTryValidate(tag, invalid);
+        }
 
-    T& operator*() {
-        return innr->real;
     }
-    T* operator->() {
-        return &(innr->real);
-    }
-    
-    //TODO: 避免多继承
-    template<typename _Tp,
-        typename = typename std::enable_if<std::is_base_of<_Tp, T>::value, int>::type>
-    operator MTChainPtr<_Tp>() {
-        return *(MTChainPtr<_Tp>*)this;
-    }
-
-    friend bool operator==(const MTChainPtr<T> &a, const MTChainPtr<T> &b) {
-        return a.innr == b.innr;
-    }
-    friend bool operator==(const MTChainPtr<T> &s, std::nullptr_t) {
-        return s.innr == nullptr;
-    }
-    friend bool operator==(std::nullptr_t, const MTChainPtr<T> &s) {
-        return s.innr == nullptr;
-    }
-
-    friend bool operator!=(const MTChainPtr<T> &a, const MTChainPtr<T> &b) {
-        return a.innr != b.innr;
-    }
-    friend bool operator!=(const MTChainPtr<T> &s, std::nullptr_t) {
-        return s.innr != nullptr;
-    }
-    friend bool operator!=(std::nullptr_t, const MTChainPtr<T> &s) {
-        return s.innr != nullptr;
-    }
-
-	//仅可用于 == this
-    friend bool operator!=(const MTChainPtr<T> &a, const T *b) {
-        return a.innr != (MTChainCore<T>*)b;
-    }
-    friend bool operator!=(const T *b, const MTChainPtr<T> &a) {
-        return a.innr != (MTChainCore<T>*)b;
-    }
-    friend bool operator==(const MTChainPtr<T> &a, const T *b) {
-        return a.innr == (MTChainCore<T>*)b;
-    }
-    friend bool operator==(const T *b, const MTChainPtr<T> &a) {
-        return a.innr == (MTChainCore<T>*)b;
-    }
+    // [[gnu::always_inline]] void MTTryValidate() {//被动调用，此时outr已上锁, this已上锁，且real需更新链
+    //     if(outr->invalid == 0) {// 由已存活的outr调用
+    //         invalid = 0;
+    //         outr->mOutr.clear();
+    //     } else if(outr->invalid != invalid) { //outr连接到其他线程
+    //         if(auto i = outr->inext; i == nullptr) { //被动连接到其他线程
+    //             invalid = outr->invalid;
+    //             outr->mOutr.clear();
+    //         } else { //i != nullptr
+    //             while(i->mOutr.test_and_set());
+    //             if(i->invalid == 0) { //连接到存活对象outr->inext，而非其他线程, 交换outr和i
+    //                 invalid = 0;
+    //                 if(i->inext != nullptr) {
+    //                     while(i->inext->mOutr.test_and_set());
+    //                     i->inext->ipriv = outr;
+    //                     i->inext->mOutr.clear();
+    //                 }
+    //                 outr->ipriv = i;
+    //                 outr->inext = i->inext;
+    //                 i->ipriv = nullptr;
+    //                 i->inext = outr;
+    //                 std::swap(outr, i);
+    //                 outr->mOutr.clear();
+    //                 i->mOutr.clear();
+    //             } else while(true) { //outr->inext不存活, 尝试寻找其他存活节点
+    //                 if(i->inext == nullptr) { //无其他存活节点, 被动连接到其他线程
+    //                     invalid = outr->invalid;
+    //                     outr->mOutr.clear();
+    //                     i->mOutr.clear();
+    //                     break;
+    //                 }
+    //                 i = i->next;
+    //                 while(i->mOutr.test_and_set());
+    //                 if(i->invalid == 0) { //连接到存活对象i，而非其他线程, 交换outr和i
+    //                     auto ip = i->ipriv, in = i->inext;
+    //                     ip->inext = in;
+    //                     if(in != nullptr) {
+    //                         while(in->mOutr.test_and_set());
+    //                         in->ipriv = ip;
+    //                         in->mOutr.clear();
+    //                     }
+    //                     ip->mOutr.clear();
+    //                     i->ipriv = nullptr;
+    //                     i->inext = outr;
+    //                     outr->ipriv = i;
+    //                     // outr = i;
+    //                     std::swap(outr, i);
+    //                     outr->mOutr.clear();
+    //                     i->mOutr.clear();
+    //                     break;
+    //                 }
+    //                 i->ipriv.mOutr.clear();
+    //             }
+    //         }
+    //     } else { //outr失效, 需找其他线程
+    //         if(auto i = outr->inext; i == nullptr) { //被动连接到其他线程
+    //             invalid = outr->invalid;
+    //             outr->mOutr.clear();
+    //         } else { //i != nullptr
+    //             while(i->mOutr.test_and_set());
+    //             if(i->invalid == 0) { //连接到存活对象outr->inext，而非其他线程, 交换outr和i
+    //                 invalid = 0;
+    //                 if(i->inext != nullptr) {
+    //                     while(i->inext->mOutr.test_and_set());
+    //                     i->inext->ipriv = outr;
+    //                     i->inext->mOutr.clear();
+    //                 }
+    //                 outr->ipriv = i;
+    //                 outr->inext = i->inext;
+    //                 i->ipriv = nullptr;
+    //                 i->inext = outr;
+    //                 std::swap(outr, i);
+    //                 outr->mOutr.clear();
+    //                 i->mOutr.clear();
+    //             } else { //i->invalid != 0
+    //                 MTChainPtr<T> *j = nullptr; //用于存储首个可连接到其他线程的节点
+    //                 if(i->invalid != invalid) {
+    //                     j = i;
+    //                 }
+    //                 while(true) { //outr->inext不存活, 尝试寻找其他存活节点
+    //                     if(i->inext == nullptr) { //无其他存活节点, 被动连接到其他线程
+    //                         if(!j) {
+    //                             invalid = outr->invalid;
+    //                             outr->mOutr.clear();
+    //                             i->mOutr.clear();
+    //                         } else {
+    //                             if(j == outr->inext) {
+    //                                 auto min
+    //                             }
+    //                         }
+    //                         break;
+    //                     }
+    //                     i = i->next;
+    //                     while(i->mOutr.test_and_set());
+    //                     if(i->invalid == 0) { //连接到存活对象i，而非其他线程, 交换outr和i
+    //                         if(j) {
+    //                             if(j == outr->inext) {
+    //                                 j->mOutr.clear();
+    //                             } else if(j == i->priv) {
+    //                                 j->priv->mOutr.clear();
+    //                             } else {
+    //                                 j->mOutr.clear();
+    //                                 j->priv->mOutr.clear();
+    //                             }
+    //                         }
+    //                         auto ip = i->ipriv, in = i->inext;
+    //                         ip->inext = in;
+    //                         if(in != nullptr) {
+    //                             while(in->mOutr.test_and_set());
+    //                             in->ipriv = ip;
+    //                             in->mOutr.clear();
+    //                         }
+    //                         ip->mOutr.clear();
+    //                         i->ipriv = nullptr;
+    //                         i->inext = outr;
+    //                         outr->ipriv = i;
+    //                         // outr = i;
+    //                         std::swap(outr, i);
+    //                         outr->mOutr.clear();
+    //                         i->mOutr.clear();
+    //                         break;
+    //                     }
+    //                     if(j == nullptr && i->invalid != invalid)
+    //                         j = i;
+    //                     if(j != i && j != i->ipriv)
+    //                         i->ipriv.mOutr.clear();
+    //                 }
+    //     }
+    //         auto i = outr;
+    //         while(true) {
+    //             if(i->inext == )
+    //         }
+            
+    //         for(; i != nullptr; i = i->inext) {
+    //             while(i->mOutr.test_and_set());
+    //             if(i->ipriv != outr)
+    //                 i->ipriv->mOutr.clear();
+    //             if(i->invalid == 0) { //连接到存活对象，而非其他线程
+    //                 invalid = false;
+    //                 auto ip = i->ipriv, in = i->inext;
+    //                 ip->inext = in;
+    //                 if(in != nullptr) {
+    //                     in->ipriv = ip;
+    //                 }
+    //                 i->ipriv = nullptr;
+    //                 i->inext = outr;
+    //                 outr->ipriv = i;
+    //                 outr = i;
+    //                 break;
+    //             }
+    //         }
+    //     } else for(auto i = outr->inext; i != nullptr; i = i->inext) {
+    //         if(!i->invalid) {
+    //             invalid = false;
+    //             auto ip = i->ipriv, in = i->inext;
+    //             ip->inext = in;
+    //             if(in != nullptr) {
+    //                 in->ipriv = ip;
+    //             }
+    //             i->ipriv = nullptr;
+    //             i->inext = outr;
+    //             outr->ipriv = i;
+    //             outr = i;
+    //             break;
+    //         }
+    //     }
+    //     if constexpr(decltype(haveMTTryValidate<T>(0))::value) {
+    //         real.TryValidate(tag, invalid);
+    //     }
+    // }
+    template<class... Args>
+    MTChainCore(Args&&... args) :real(std::forward<Args>(args)...) {}
 };
-
-template<typename>
-struct isMTChainPtr : public std::false_type {};
-
-template<typename V>
-struct isMTChainPtr<MTChainPtr<V>> : public std::true_type {};
-
-
-template<typename T, typename... _Args>
-inline MTChainPtr<T> MakeChain(_Args&&... __args) {
-    return MTChainPtr<T>(new MTChainCore<T>(std::forward<_Args>(__args)...));
-}
-
 
 }}
 
