@@ -14,7 +14,7 @@ using namespace RTGC;
 
 // 稍复杂的示意, 展示了多线程时循环引用的情况
 
-constexpr int ThreadNum = 50;
+constexpr int ThreadNum = 1000;
 constexpr int ArrayNum = 1000;
 constexpr int LoopNum = 100;
 
@@ -27,12 +27,12 @@ public:
     ChainPtr<T1> next;
     T1() {
         cnsNum++;
-        cout << "construct\n";
+        // cout << "construct\n";
     }
     
     ~T1() {
         desNum++;
-        cout << "destruct\n";
+        // cout << "destruct\n";
     }
 };
 size_t T1::cnsNum = 0;
@@ -88,17 +88,22 @@ public:
 int main() {
     gInitFinish.lock();
     cout << "RTGC:" << endl;
+    RTGC::detail::GCThread::Start();
     {
         boost::timer::cpu_timer t;
         t.start();
         for (int i = 0; i < LoopNum; i++) {
             gPtr = MakeChain<T1>();
 
+            // get<ChainPtr<T1>>(gPtr)->next = MakeChain<T1>();
+            // get<ChainPtr<T1>>(gPtr)->next->next = MakeChain<T1>();
+            // get<ChainPtr<T1>>(gPtr)->next->next->next = MakeChain<T1>();
             gnitNum = 0;
             gSync.lock();
             vector<ThreadProc<ChainPtr<T1>>> pool(ThreadNum);
             gInitFinish.lock();
-            gPtr.emplace<ChainPtr<T1>>(nullptr);
+            // gPtr.emplace<ChainPtr<T1>>(nullptr);
+            get<ChainPtr<T1>>(gPtr) = nullptr;
             gSync.unlock();
             
             for(auto &j : pool) {
@@ -106,12 +111,15 @@ int main() {
             }
         }
         t.stop();
+    // RTGC::detail::GCThread::Start();
+    RTGC::detail::GCThread::End();
         cout << "all : " << t.elapsed().wall/1000000 << endl;   //输出：start()至调用此函数的经过时间
         cout << "user : " << t.elapsed().user/1000000 << endl;   //输出：start()至调用此函数的用户时间
         cout << "system : " << t.elapsed().system/1000000 << endl; //输出：start()至调用此函数的系统时间
         cout << "cnsNum = " << T1::cnsNum << endl;
         cout << "desNum = " << T1::desNum << endl;
     }
+    // RTGC::detail::GCThread::End();
     cout << endl;
     cout << "shared_ptr:" << endl;
     {
@@ -120,6 +128,8 @@ int main() {
         for (int i = 0; i < LoopNum; i++) {
             gPtr = make_shared<T2>();
 
+            // get<shared_ptr<T2>>(gPtr)->next = make_shared<T2>();
+            // get<shared_ptr<T2>>(gPtr)->next->next = make_shared<T2>();
             gnitNum = 0;
             gSync.lock();
             vector<ThreadProc<shared_ptr<T2>>> pool(ThreadNum);

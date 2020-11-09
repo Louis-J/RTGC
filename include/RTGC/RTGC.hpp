@@ -4,19 +4,18 @@
 #include<type_traits>
 #include<utility>
 #include"detail/ClassMembers.hpp"
+#include"detail/GCThread.hpp"
 
 #include"detail/ChainPtr.hpp"
 #include"detail/CountPtr.hpp"
-// #include"detail/MTChainPtr.hpp"
-#include"detail/MTCountPtr.hpp"
+
+#include"detail/GCThreadImpl.hpp"
 
 #include"detail/LinkAnce.hpp"
 #include"detail/SmarterPtr.hpp"
 
 #include"detail/ChainCore.hpp"
 #include"detail/CountCore.hpp"
-// #include"detail/MTChainCore.hpp"
-#include"detail/MTCountCore.hpp"
 #include"detail/Optimised.hpp"
 
 // 由于是侵入式的设计，因此不支持多继承的多态(无法检测多继承而不支持)。计划编写类似于Java继承规则的继承工具(保证继承的虚表最多只有一个，多态时不会改变内存地址)
@@ -42,14 +41,6 @@ using CountPtr = detail::CountPtr<T>;
 template<typename _Tp, typename... _Args>
 inline CountPtr<_Tp> MakeCount(_Args&&... __args) {
     return detail::MakeCount<_Tp>(std::forward<_Args>(__args)...);
-}
-
-template<typename T>
-using MTCountPtr = detail::MTCountPtr<T>;
-
-template<typename _Tp, typename... _Args>
-inline MTCountPtr<_Tp> MakeMTCount(_Args&&... __args) {
-    return detail::MakeMTCount<_Tp>(std::forward<_Args>(__args)...);
 }
 
 // SmarterPtr
@@ -83,9 +74,9 @@ friend struct RTGC::detail::ToTuple<thisT>;                                     
     auto &&tieTuple = RTGC::detail::ToTuple<thisT>::TieToTuple(*this, RTGC::detail::const_size_t<mNum>());                     \
     RTGC::detail::MakeInvalidate(tieTuple);                                                                                    \
 }                                                                                                                              \
-[[gnu::always_inline]] constexpr inline void TryValidate(bool &invalid) {                                                        \
+[[gnu::always_inline]] constexpr inline void TryValidate(bool &invalid) {                                                      \
     auto &&tieTuple = RTGC::detail::ToTuple<thisT>::TieToTuple(*this, RTGC::detail::const_size_t<mNum>());                     \
-    RTGC::detail::MakeTryValidate(invalid, tieTuple);                                                                            \
+    RTGC::detail::MakeTryValidate(invalid, tieTuple);                                                                          \
 }
 
 #define RTGC_AutoCRDetectIn(cName, mNum)                                                                                       \
@@ -93,7 +84,7 @@ constexpr inline auto ToTuple() {                                               
     return RTGC::detail::ToTuple<thisT>::TieToTuple(*this, RTGC::detail::const_size_t<mNum>());                                \
 }
 
-#define RTGC_AutoCRDetectOut(cName, enable)                                                                                    \
+#define RTGC_AutoCRDetectOut(cName)                                                                                            \
 namespace RTGC { namespace detail {                                                                                            \
 template<class T, class U, std::enable_if_t<RTGC_IsComplex<T>::value && std::is_same<T, cName>::value, int> = 0>               \
 constexpr bool CanReferTo() {                                                                                                  \
@@ -101,6 +92,6 @@ constexpr bool CanReferTo() {                                                   
     return MakeCanReferTo<V, U>();                                                                                             \
 }                                                                                                                              \
 }}                                                                                                                             \
-static_assert(RTGC::detail::CanReferTo<cName, cName>() == enable);
+static_assert(RTGC::detail::CanReferTo<cName, cName>() == cName::RTGC_MayCirRef);
 
 #endif

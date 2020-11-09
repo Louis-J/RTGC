@@ -103,7 +103,7 @@ struct CirNodeA {
 
     static size_t cnsNum;
     TPtr l, r;
-    CirNodeA() : l(NULL), r(NULL) {
+    CirNodeA() : l(nullptr), r(nullptr) {
         #if HAVE_CNS
         cnsNum ++;
         #endif
@@ -130,7 +130,7 @@ struct CirNodeC {
 
     static size_t cnsNum;
     TPtr l, r;
-    CirNodeC() : l(NULL), r(NULL) {
+    CirNodeC() : l(nullptr), r(nullptr) {
         #if HAVE_CNS
         cnsNum ++;
         #endif
@@ -160,7 +160,7 @@ struct CirNodeD {
 
     static size_t cnsNum;
     TPtr l, r;
-    CirNodeD() : l(NULL), r(NULL) {
+    CirNodeD() : l(nullptr), r(nullptr) {
         #if HAVE_CNS
         cnsNum ++;
         #endif
@@ -171,7 +171,7 @@ struct CirNodeD {
         #endif
     }
 };
-RTGC_AutoCRDetectOut(CirNodeD, CirNodeD::RTGC_MayCirRef);
+RTGC_AutoCRDetectOut(CirNodeD);
 
 template<typename T>
 ostream& operator<<(ostream& ostr, vector<T>& v) {

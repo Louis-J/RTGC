@@ -3,8 +3,25 @@
 
 #include<cstddef>
 #include<atomic>
+#include<iostream>
 
 namespace RTGC { namespace detail {
+
+// 前提: 同一个ChainPtr不会由多个线程同时拥有
+// 假设: 拥有A B, 同时指向C，保证多线程安全, A拥有C的所有权
+//       =>不存在A、B同时对C操作的情况(C保证线程安全，同一时刻仅由一个线程访问)
+// 特点: 对指向同一个ChainCore的ChainPtr，同一时刻仅有一个线程可以释放
+//       操作时，标记为invalid后释放所有权，防止死锁; 因此其他线程可以对invalid的节点进行操作
+//       TryValidate会有逆向扫描，通过破坏"保持"条件解决死锁
+// 场景: 1. A正在释放, 要转移至B; B正valid，未删除
+//       2. B正在释放          ; A正valid，未删除
+//       3. A准备释放, 要转移至B; B正在释放, 已invalid，暂未删除(Invalidate/TryValidate)
+//       4. B准备释放          ; A正在释放, 已invalid，暂未删除(Invalidate)
+//       5. B准备释放          ; A正在释放, 已invalid，暂未删除(TryValidate)
+
+// 具体:
+//   1. innr 控制指向head的所有权
+//   2. 默认顺序为从前往后, 往前获取所有权失败时放弃自身的修改所有权并重新获取
 
 template<typename T>
 class ChainCore;
@@ -12,137 +29,163 @@ class ChainCore;
 template<typename T>
 class ChainPtr {
     friend class ChainCore<T>;
-private:
+
+    template<typename Tp, typename... _Args>
+    friend ChainPtr<Tp> MakeChain(_Args&&... __args);
+
+    friend class GCThread::GCNode;
+public:
+// private:
     bool invalid = false;
     ChainCore<T> *innr = nullptr;//指向的内节点，即指向的堆地址
-    mutable const ChainPtr<T> *ipriv = nullptr, *inext = nullptr;//子层上一结点,下一结点
+    mutable const ChainPtr<T> *ipriv = this, *inext = this;//子层上一结点,下一结点
     
     void EraseMin() {
-        if(ipriv != nullptr)
-            ipriv->inext = inext;
-        if(inext != nullptr)
-            inext->ipriv = ipriv;
+        ipriv->inext = inext;
+        inext->ipriv = ipriv;
     }
+
+    void Erase() {
+        if(ipriv != this)
+            EraseMin();
+    }
+
+    void EraseMax() {
+        if(ipriv != this) {
+            EraseMin();
+            ipriv = this;
+            inext = this;
+        }
+    }
+
     //判断是否删除内层
     void DelIn() {
-        if(innr != nullptr) {//主动删且有innr，此时this未上锁，innr未上锁
-            if(innr->outr == this) {//有强引用innr，需更新链
-                invalid = true;
-                innr->Invalidate();
-                innr->TryValidate();
-                EraseMin();
-                ipriv = nullptr;
-                inext = nullptr;
-                if(innr->outr == this && innr->invalid) {//innr废弃
-                    delete innr;
-                }
-                invalid = false;
-            } else {//无强引用innr
-                EraseMin();
-                ipriv = nullptr;
-                inext = nullptr;
+        if(innr != nullptr) { // 主动删且有innr，此时this未上锁，innr未上锁
+            innr->LockAtomic();
+            if(innr->outr == this) // 有强引用innr，需交给GC线程更新链
+                GCThread::AddNode(*this);
+            Erase();
+            innr->UnlockAtomic();
+            if(ipriv != this) {
+                ipriv = this;
+                inext = this;
             }
             innr = nullptr;
         }
     }
-public:
-    void IN2() {
-        if(!invalid && innr != nullptr && innr->outr == this) {
-            invalid = true;
-            innr->Invalidate();
+
+public: // 核心算法: 如何去初步标记/尝试连接/最终清扫
+    // 由GC调用
+    static void DelFromOwner(ChainPtr<T> *cp, std::atomic<int> &s) {
+        cp->invalid = true;
+        s.store(10);
+        cp->innr->Invalidate();
+        s.store(20);
+        for (int cnt = 0; cp->innr->mInnr.test_and_set(); ++cnt) {
+            if(cnt >= 10000) {
+                std::cout << "BAD 20 !!!\n";
+                break;
+            }
         }
+        cp->innr->UnlockAtomic();
+        
+        cp->innr->TryValidate();
+        s.store(30);
+        cp->innr->LockAtomic();
+        cp->EraseMax();
+        cp->innr->UnlockAtomic();
+        if(cp->innr->outr == cp && cp->innr->invalid) {//innr废弃
+            delete cp->innr;
+        }
+        s.store(40);
     }
-    void TR2() {
-        if(invalid) {
-            innr->TryValidate();
+
+    // 由GC调用
+    static void ReLinkInnr(ChainPtr<T> *outr, ChainCore<T> *innr) {
+        innr->Invalidate();
+        innr->TryValidate();
+        if(innr->outr == outr)
+            delete innr;
+    }
+
+    // 由GC调用
+    void Invalidate() {
+        invalid = true;
+        if(innr != nullptr) {
+            innr->LockAtomic();
+            if(innr->outr == this) {
+                innr->UnlockAtomic();
+                innr->Invalidate();
+            } else {
+                // 放到循环链表末尾
+                auto &oend = innr->outr->ipriv;
+                if(oend != this) {
+                    ipriv->inext = inext;
+                    inext->ipriv = ipriv;
+                    inext = innr->outr;
+                    ipriv = oend;
+                    oend->inext = this;
+                    oend = this;
+                }
+                innr->UnlockAtomic();
+            }
         }
     }
 
-    // ~ChainPtr() {
-    //     if(invalid) {//被动删，此时this上锁，innr上锁
-    //         if(ipriv != nullptr && !ipriv->invalid)
-    //             ipriv->inext = inext;
-    //         if(inext != nullptr && !inext->invalid)
-    //             inext->ipriv = ipriv;
-    //         if(innr != nullptr && innr->outr == this)
-    //             delete innr;
-    //     } else if(innr != nullptr) {//主动删且有innr，此时this未上锁，innr未上锁
-    //         if(innr->outr == this) {//有强引用innr，需更新链
-    //             invalid = true;
-    //             innr->Invalidate();
-    //             innr->TryValidate();
-    //             if(innr->outr == this && innr->invalid) {//innr废弃
-    //                 delete innr;
-    //             } else {
-    //                 if(ipriv != nullptr && !ipriv->invalid)
-    //                     ipriv->inext = inext;
-    //                 if(inext != nullptr && !inext->invalid)
-    //                     inext->ipriv = ipriv;
-    //             }
-    //         } else {//无强引用innr
-    //             if(ipriv != nullptr && !ipriv->invalid)
-    //                 ipriv->inext = inext;
-    //             if(inext != nullptr && !inext->invalid)
-    //                 inext->ipriv = ipriv;
-    //         }
-    //     }
-    //     //主动删且无innr
-    // }
+    // 由GC调用
+    void TryValidate(bool &pInvalid) {
+        if(pInvalid) {
+            if(innr != nullptr) {
+                innr->LockAtomic();
+                if(innr->outr == this) {
+                    innr->UnlockAtomic();
+                    innr->TryValidate();
+                } else
+                    innr->UnlockAtomic();
+            }
+        } else {
+            this->invalid = false;
+            if(innr != nullptr) {
+                innr->LockAtomic();
+                if(innr->outr == this) {
+                    innr->UnlockAtomic();
+                    innr->TryValidate();
+                } else if(innr->invalid) {
+                    auto &ioutr = innr->outr;
+                    if(ioutr->inext->invalid == true) {
+                        // 放到循环链表开头
+                        ipriv->inext = inext;
+                        inext->ipriv = ipriv;
+                        inext = ioutr->inext;
+                        ipriv = ioutr;
+                        ioutr->inext = this;
+                        ioutr = this;
+                    }
+                    innr->UnlockAtomic();
+                    innr->TryValidate();
+                } else
+                    innr->UnlockAtomic();
+            }
+        }
+    }
+
     ~ChainPtr() {
-        if(invalid) {//被动删，此时this上锁，innr上锁
-            EraseMin();
+        if(invalid) { // 被动删, 由GC调用
+            Erase();
             if(innr != nullptr && innr->outr == this)
                 delete innr;
-        } else if(innr != nullptr) {//主动删且有innr，此时this未上锁，innr未上锁
-            if(innr->outr == this) {//有强引用innr，需更新链
-                invalid = true;
-                innr->Invalidate();
-                innr->TryValidate();
-                EraseMin();
-                if(innr->outr == this && innr->invalid) {//innr废弃
-                    delete innr;
-                }
-            } else {//无强引用innr
-                EraseMin();
+        } else if(innr != nullptr) { // 主动删且有innr，此时this未上锁，innr未上锁
+            innr->LockAtomic(); //得到mInnr
+            if(innr->outr == this) { // 有强引用innr，需交给GC线程更新链
+                GCThread::AddNode(*this);
+            } else { // 无强引用innr, 不需要交给GC线程
+                Erase();
             }
+            innr->UnlockAtomic();
         }
         //主动删且无innr
     }
-public:
-    ChainPtr() {}
-    // ChainPtr(ChainPtr<T> &o) {
-    //     if(o.innr != nullptr) {
-    //         innr = o.innr;
-
-    //         ipriv = &o;
-    //         inext = o.inext;
-    //         o.inext = this;
-    //         if(inext != nullptr)
-    //             inext->ipriv = this;
-    //     }
-    // }
-    // ChainPtr(const ChainPtr<T> &o) {
-    //     if(o.innr != nullptr){
-    //         innr = o.innr;
-
-    //         ipriv = const_cast<ChainPtr<T>*>(&o);
-    //         inext = o.inext;
-    //         const_cast<ChainPtr<T>*>(&o)->inext = this;
-    //         if(inext != nullptr)
-    //             inext->ipriv = this;
-    //     }
-    // }
-    ChainPtr(const ChainPtr<T> &o) {
-        if(o.innr != nullptr) {
-            innr = o.innr;
-
-            ipriv = &o;
-            inext = o.inext;
-            o.inext = this;
-            if(inext != nullptr)
-                inext->ipriv = this;
-        }
-    }
+private:
     ChainPtr(ChainCore<T> *i) {
         if(i != nullptr){
             innr = i;
@@ -150,17 +193,37 @@ public:
         }
     }
 
+public:
+    ChainPtr() {}
+    ChainPtr(std::nullptr_t) {}
+
+    ChainPtr(const ChainPtr<T> &o) {
+        if(o.innr != nullptr) {
+            o.innr->UnlockAtomic();
+            innr = o.innr;
+            auto &oend = innr->outr->ipriv;
+            ipriv = oend;
+            inext = oend->inext;
+            oend->inext = this;
+            oend = this;
+
+            innr->UnlockAtomic();
+        }
+    }
+
     ChainPtr<T>& operator=(ChainPtr<T> &o) {
         if(innr != o.innr) {
             DelIn();
             if(o.innr != nullptr){
+                o.innr->UnlockAtomic();
                 innr = o.innr;
-                
-                ipriv = &o;
-                inext = o.inext;
-                o.inext = this;
-                if(inext != nullptr)
-                    inext->ipriv = this;
+                auto &oend = innr->outr->ipriv;
+                ipriv = oend;
+                inext = oend->inext;
+                oend->inext = this;
+                oend = this;
+
+                innr->UnlockAtomic();
             }
         }
         return *this;
@@ -169,13 +232,15 @@ public:
         if(innr != o.innr) {
             DelIn();
             if(o.innr != nullptr){
+                o.innr->UnlockAtomic();
                 innr = o.innr;
-                
-                ipriv = &o;
-                inext = o.inext;
-                o.inext = this;
-                if(inext != nullptr)
-                    inext->ipriv = this;
+                auto &oend = innr->outr->ipriv;
+                ipriv = oend;
+                inext = oend->inext;
+                oend->inext = this;
+                oend = this;
+
+                innr->UnlockAtomic();
             }
         }
         return *this;
@@ -185,26 +250,17 @@ public:
         return *this;
     }
 
-    void Invalidate() {//被动调用，此时this未上锁，innr已上锁，且innr需更新链
-        invalid = true;
-        if(innr != nullptr && innr->outr == this)
-            innr->Invalidate();
-    }
-    void TryValidate(bool &pInvalid) {
-        if(pInvalid) {
-            if(innr != nullptr && innr->outr == this)
-                innr->TryValidate();
-        } else {
-            this->invalid = false;
-            if(innr != nullptr && innr->invalid)
-                innr->TryValidate();
-        }
-    }
-
     T& operator*() {
         return innr->real;
     }
     T* operator->() {
+        return &(innr->real);
+    }
+    
+    const T& operator*() const {
+        return innr->real;
+    }
+    const T* operator->() const {
         return &(innr->real);
     }
     
@@ -235,7 +291,7 @@ public:
         return s.innr != nullptr;
     }
 
-	//仅可用于 == this
+    // 仅可用于 == this
     friend bool operator!=(const ChainPtr<T> &a, const T *b) {
         return a.innr != (ChainCore<T>*)b;
     }
