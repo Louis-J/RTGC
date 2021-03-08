@@ -171,7 +171,7 @@ struct CirNodeD {
         #endif
     }
 };
-RTGC_AutoCRDetectOut(CirNodeD, CirNodeD::RTGC_MayCirRef);
+RTGC_AutoCRDetectOut(CirNodeD);
 
 template<typename T>
 ostream& operator<<(ostream& ostr, vector<T>& v) {

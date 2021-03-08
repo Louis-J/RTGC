@@ -15,7 +15,7 @@ using namespace RTGC;
 // 稍复杂的示意, 展示了多线程时循环引用的情况
 
 constexpr int ThreadNum = 100;
-constexpr int ArrayNum = 100;
+constexpr int ArrayNum = 1000;
 constexpr int LoopNum = 100;
 
 class T1 {
@@ -85,28 +85,10 @@ public:
     }) {}
 };
 
-std::timed_mutex debugMutex;
-std::atomic<size_t> debugStatus;
-std::thread debugThread;
-bool debugExitFlag = false;
-
 int main() {
-    debugStatus.store(1000);
-    debugMutex.try_lock();
-    debugThread = std::thread([](){
-        for(debugMutex.try_lock_for(std::chrono::milliseconds(2000)); !debugExitFlag; debugMutex.try_lock_for(std::chrono::milliseconds(2000))) {
-            size_t valNow = T1::cnsNum;
-            size_t val = debugStatus.load();
-            if(val == valNow) {
-                std::cout << "BAD!!! DebugStatus: " << val << "\n";
-                // exit(val);
-            } else
-                debugStatus.store(valNow);
-        }
-    });
-    
     gInitFinish.lock();
     cout << "RTGC:" << endl;
+    RTGC::detail::GCThread::Start();
     {
         boost::timer::cpu_timer t;
         t.start();
@@ -120,7 +102,6 @@ int main() {
             gSync.lock();
             vector<ThreadProc<ChainPtr<T1>>> pool(ThreadNum);
             gInitFinish.lock();
-            ChainPtr<T1> ano = get<ChainPtr<T1>>(gPtr);
             // gPtr.emplace<ChainPtr<T1>>(nullptr);
             get<ChainPtr<T1>>(gPtr) = nullptr;
             gSync.unlock();
@@ -128,58 +109,45 @@ int main() {
             for(auto &j : pool) {
                 j.join();
             }
-
-            bool invalidO = ano.invalid;
-            RTGC::detail::ChainCore<T1> *innr = ano.innr;
-            const ChainPtr<T1> *ipriv = ano.ipriv, *inext = ano.inext;
-
-            bool invalidN = innr->invalid;
-            const ChainPtr<T1> *outr = innr->outr; // 所有者结点
-
-            auto hisdes = T1::desNum;
-            ano = nullptr;
-            if(hisdes == T1::desNum) {
-                cout << "why?\n";
-            }
         }
         t.stop();
+    // RTGC::detail::GCThread::Start();
+    RTGC::detail::GCThread::End();
         cout << "all : " << t.elapsed().wall/1000000 << endl;   //输出：start()至调用此函数的经过时间
         cout << "user : " << t.elapsed().user/1000000 << endl;   //输出：start()至调用此函数的用户时间
         cout << "system : " << t.elapsed().system/1000000 << endl; //输出：start()至调用此函数的系统时间
         cout << "cnsNum = " << T1::cnsNum << endl;
         cout << "desNum = " << T1::desNum << endl;
     }
-    debugExitFlag = true;
-    debugMutex.unlock();
-    debugThread.join();
+    // RTGC::detail::GCThread::End();
     cout << endl;
-    // cout << "shared_ptr:" << endl;
-    // {
-    //     boost::timer::cpu_timer t;
-    //     t.start();
-    //     for (int i = 0; i < LoopNum; i++) {
-    //         gPtr = make_shared<T2>();
+    cout << "shared_ptr:" << endl;
+    {
+        boost::timer::cpu_timer t;
+        t.start();
+        for (int i = 0; i < LoopNum; i++) {
+            gPtr = make_shared<T2>();
 
-    //         get<shared_ptr<T2>>(gPtr)->next = make_shared<T2>();
-    //         get<shared_ptr<T2>>(gPtr)->next->next = make_shared<T2>();
-    //         gnitNum = 0;
-    //         gSync.lock();
-    //         vector<ThreadProc<shared_ptr<T2>>> pool(ThreadNum);
-    //         gInitFinish.lock();
-    //         gPtr.emplace<shared_ptr<T2>>(nullptr);
-    //         gSync.unlock();
+            // get<shared_ptr<T2>>(gPtr)->next = make_shared<T2>();
+            // get<shared_ptr<T2>>(gPtr)->next->next = make_shared<T2>();
+            gnitNum = 0;
+            gSync.lock();
+            vector<ThreadProc<shared_ptr<T2>>> pool(ThreadNum);
+            gInitFinish.lock();
+            gPtr.emplace<shared_ptr<T2>>(nullptr);
+            gSync.unlock();
             
-    //         for(auto &j : pool) {
-    //             j.join();
-    //         }
-    //     }
-    //     t.stop();
-    //     cout << "all : " << t.elapsed().wall/1000000 << endl;   //输出：start()至调用此函数的经过时间
-    //     cout << "user : " << t.elapsed().user/1000000 << endl;   //输出：start()至调用此函数的用户时间
-    //     cout << "system : " << t.elapsed().system/1000000 << endl; //输出：start()至调用此函数的系统时间
-    //     cout << "cnsNum = " << T2::cnsNum << endl;
-    //     cout << "desNum = " << T2::desNum << endl;
-    // }
+            for(auto &j : pool) {
+                j.join();
+            }
+        }
+        t.stop();
+        cout << "all : " << t.elapsed().wall/1000000 << endl;   //输出：start()至调用此函数的经过时间
+        cout << "user : " << t.elapsed().user/1000000 << endl;   //输出：start()至调用此函数的用户时间
+        cout << "system : " << t.elapsed().system/1000000 << endl; //输出：start()至调用此函数的系统时间
+        cout << "cnsNum = " << T2::cnsNum << endl;
+        cout << "desNum = " << T2::desNum << endl;
+    }
     
 
     return 0;

@@ -96,12 +96,14 @@ public:
 
 int main() {
     cout << "RTGC:" << endl;
+    RTGC::detail::GCThread::Start();
     {
         ChainPtr<T1A> a1(MakeChain<T1A>("a1", "b1"));
         ChainPtr<T1A> a2(MakeChain<T1A>("a2", "b2"));
         a1->next.next = a2;
         a2->next.next = a1;
     }
+    RTGC::detail::GCThread::End();
     cout << "shared_ptr:" << endl;
     {
         shared_ptr<T2A> a1(make_shared<T2A>("a1", "b1"));

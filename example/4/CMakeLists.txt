@@ -1,18 +1,39 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 3.0)
 
 PROJECT(Example_4)
+set(CMAKE_VERBOSE_MAKEFILE OFF)
 
 # 编译器设置
 # setting compiler
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17") # 添加c++17标准支持
-# SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static-libgcc") # 静态链接
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static") # 静态链接
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall") # 开启额外警告
-SET(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -O0 -g3 -ggdb")  # debug模式下 gdb相关选项
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    message("using Clang")
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17") # 添加c++17标准支持
+    # SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static-libgcc") # 静态链接
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static") # 静态链接
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall") # 开启额外警告
+    SET(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -O0 -g3 -ggdb")  # debug模式下 gdb相关选项
+    SET(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3") # release模式下 gdb相关选项
+elseif (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+    message("using GCC")
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17") # 添加c++17标准支持
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static-libgcc") # 静态链接
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static") # 静态链接
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall") # 开启额外警告
+    SET(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -O0 -g3 -ggdb")  # debug模式下 gdb相关选项
+    SET(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3") # release模式下 gdb相关选项
+elseif (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+    message("using VC")
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++17") # 添加c++17标准支持
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Zc:lambda") # vc更好的lambda支持
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /constexpr:depth<8192>") # vc更好的constexpr支持
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Wall") # 开启额外警告
+    SET(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} /Od /RTCs /Zi /Zo")  # debug模式下 gdb相关选项
+    SET(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} /O2 /GA /GL") # release模式下 gdb相关选项
+    include_directories("F:/Program/ProMaker/CCPP/VS2019/Community/VC/Tools/MSVC/14.27.29110/include")
+endif()
 # SET(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3 -fno-optimize-sibling-calls -fno-tree-tail-merge") # release模式下 gdb相关选项
 # SET(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3 -fno-optimize-sibling-calls -ftree-tail-merge") # release模式下 gdb相关选项
 # SET(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3 -foptimize-sibling-calls -fno-tree-tail-merge") # release模式下 gdb相关选项
-SET(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3") # release模式下 gdb相关选项
 
 
 
@@ -36,7 +57,7 @@ if (SIZEOF_VOID_P MATCHES "4")
 elseif (SIZEOF_VOID_P MATCHES "8")
     SET(LIBRARY_PLATFORM_SUFFIX "${CMAKE_CXX_COMPILER_ID}_64")
 endif ()
-message("${LIBRARY_PLATFORM_SUFFIX}")
+# message("${LIBRARY_PLATFORM_SUFFIX}")
 link_libraries("psapi")
 link_libraries("boost_timer-mt_${LIBRARY_PLATFORM_SUFFIX}")
 link_libraries("boost_chrono-mt_${LIBRARY_PLATFORM_SUFFIX}")

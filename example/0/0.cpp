@@ -9,10 +9,14 @@ using namespace RTGC;
 // 简单示意, 比较了RTGC/shared_ptr/unique_ptr的安全性
 
 class T1 {//use RTGC
+public:
+    constexpr static bool RTGC_MayCirRef = true;
+    RTGC_AutoChainLink(T1, 2);
+    RTGC_AutoCRDetectIn(T1, 2);
+    
 private:
     string str;
 public:
-    constexpr static bool RTGC_MayCirRef = true;
     SmarterPtr<T1> next;
     T1(string &&str):str(str){
         cout << str << " construct\n";
@@ -20,9 +24,6 @@ public:
     ~T1() {
         cout << str << " destruct\n";
     }
-public:
-    RTGC_AutoChainLink(T1, 2);
-    RTGC_AutoCRDetectIn(T1, 2);
 };
 RTGC_AutoCRDetectOut(T1);
 
@@ -55,12 +56,14 @@ public:
 int main() {
     cout << "Test1:" << endl;
     cout << "RTGC:" << endl;
+    RTGC::detail::GCThread::Start();
     {
-        ChainPtr<T1> tA(MakeChain<T1>("tA"));
-        ChainPtr<T1> tB(MakeChain<T1>("tB"));
+        SmarterPtr<T1> tA(MakeSmarter<T1>("tA"));
+        SmarterPtr<T1> tB(MakeSmarter<T1>("tB"));
         tA->next = tB;
         tB->next = tA;
     }
+    RTGC::detail::GCThread::End();
     cout << "shared_ptr:" << endl;
     {
         shared_ptr<T2> tA(make_shared<T2>("tA"));
@@ -79,11 +82,13 @@ int main() {
 
     cout << "Test2:" << endl;
     cout << "RTGC:" << endl;
+    RTGC::detail::GCThread::Start();
     {
-        ChainPtr<T1> tA(MakeChain<T1>("tA"));
-        tA->next = MakeChain<T1>("tB");
+        SmarterPtr<T1> tA(MakeSmarter<T1>("tA"));
+        tA->next = MakeSmarter<T1>("tB");
         tA->next->next = tA->next;
     }
+    RTGC::detail::GCThread::End();
     cout << "shared_ptr:" << endl;
     {
         shared_ptr<T2> tA(make_shared<T2>("tA"));
@@ -97,5 +102,6 @@ int main() {
         tA->next->next = move(tA->next);
     }
     cout << endl;
+
     return 0;
 }
