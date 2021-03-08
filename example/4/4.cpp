@@ -17,7 +17,7 @@ using namespace RTGC;
 // 稍复杂的示意, 以一个循环链表操作展示了性能及内存泄漏情况
 
 #define HAVE_CNS 1
-#define HAVE_DES 0
+#define HAVE_DES 1
 
 struct CirNodeA {
     using TPtr = CirNodeA*;
@@ -26,11 +26,12 @@ struct CirNodeA {
     }
 
     static size_t cnsNum;
+    static size_t desNum;
     int val;
     TPtr next;
     CirNodeA(int x) : val(x), next(NULL) {
         #if HAVE_CNS
-        cnsNum ++;
+        cnsNum++;
         #endif
     }
     int GetLast() {
@@ -58,7 +59,7 @@ struct CirNodeA {
     }
     ~CirNodeA() {
         #if HAVE_DES
-        cnsNum --;
+        desNum++;
         #endif
     }
 };
@@ -79,11 +80,12 @@ struct CirNodeB {
     }
 
     static size_t cnsNum;
+    static size_t desNum;
     int val;
     TPtr next;
     CirNodeB(int x) : val(x), next(NULL) {
         #if HAVE_CNS
-        cnsNum ++;
+        cnsNum++;
         #endif
     }
     int GetLast() {
@@ -111,7 +113,7 @@ struct CirNodeB {
     }
     ~CirNodeB() {
         #if HAVE_DES
-        cnsNum --;
+        desNum++;
         #endif
     }
 };
@@ -123,11 +125,12 @@ struct CirNodeC {
     }
 
     static size_t cnsNum;
+    static size_t desNum;
     int val;
     TPtr next;
     CirNodeC(int x) : val(x), next(NULL) {
         #if HAVE_CNS
-        cnsNum ++;
+        cnsNum++;
         #endif
     }
     int GetLast() {
@@ -155,7 +158,7 @@ struct CirNodeC {
     }
     ~CirNodeC() {
         #if HAVE_DES
-        cnsNum --;
+        desNum++;
         #endif
     }
 };
@@ -171,11 +174,12 @@ struct CirNodeD {
     }
 
     static size_t cnsNum;
+    static size_t desNum;
     int val;
     TPtr next;
-    CirNodeD(int x) : val(x), next(NULL) {
+    CirNodeD(int x) : val(x), next(nullptr) {
         #if HAVE_CNS
-        cnsNum ++;
+        cnsNum++;
         #endif
     }
 
@@ -196,7 +200,7 @@ struct CirNodeD {
         return head->next;
         #else
         auto ret = head->next;
-        MakeOptimisedDes(head, next);
+        // MakeOptimisedDes(head, next);
         return ret;
         #endif
     }
@@ -210,11 +214,11 @@ struct CirNodeD {
     }
     ~CirNodeD() {
         #if HAVE_DES
-        cnsNum --;
+        desNum++;
         #endif
     }
 };
-RTGC_AutoCRDetectOut(CirNodeD, CirNodeD::RTGC_MayCirRef);
+RTGC_AutoCRDetectOut(CirNodeD);
 
 template<typename T>
 ostream& operator<<(ostream& ostr, vector<T>& v) {
@@ -233,41 +237,56 @@ ostream& operator<<(ostream& ostr, vector<T>&& v) {
     return ostr << "}";
 }
 
-size_t CirNodeA::cnsNum = 0;
-size_t CirNodeB::cnsNum = 0;
-size_t CirNodeC::cnsNum = 0;
-size_t CirNodeD::cnsNum = 0;
-
 
 constexpr size_t LOOPSIZE = 20000;
+// CirNodeA
+// CirNodeB
+// CirNodeC
+// CirNodeD
 using CirType = CirNodeD;
+size_t CirType::cnsNum = 0;
+size_t CirType::desNum = 0;
 
 int main() {
     cout << "Result" << endl;
-    for(auto i = 20; i < 50; i++) {
-        auto l = CirType::Create(i);
-        cout << "list: " << l << endl;
-        cout << "last: " << l->GetLast() << endl;
-        cout << endl;
-    }
-    cout << endl << "Press any key:";
-    cin.get();
-    cout << "TimeTest" << endl;
-    {
-        const size_t memUse = getCurrentRSS();
-        boost::timer::cpu_timer t;
-        t.start();
-        for (size_t i = 0; i < LOOPSIZE; i++) {
-            for(auto j = 20; j < 50; j++)
-                CirType::Create(j)->GetLast();
+    for(auto b = 0; b < LOOPSIZE; b++) {
+        // RTGC::detail::GCThread::Start();
+        for(auto a = 0; a < 1000; a++) {
+            for(auto i = 20; i < 50; i++) {
+                auto l = CirType::Create(i);
+                // cout << "list: " << l << endl;
+                // cout << "last: " << l->GetLast() << endl;
+                // cout << endl;
+            }
         }
-        t.stop();
-        cout << "all : " << t.elapsed().wall/1000000 << "ms" << endl;   //输出：start()至调用此函数的经过时间
-        cout << "user : " << t.elapsed().user/1000000 << "ms" << endl;   //输出：start()至调用此函数的用户时间
-        cout << "system : " << t.elapsed().system/1000000 << "ms" << endl; //输出：start()至调用此函数的系统时间
-        cout << "memory use:" << getCurrentRSS() - memUse << endl;
+        // RTGC::detail::GCThread::End();
+        cout << "Construct Number: " << CirType::cnsNum << endl;
+        cout << "Destruct Number: " << CirType::desNum << endl;
+        if(CirType::cnsNum != CirType::desNum) {
+            for(auto a = 0; a < 1000; a++)
+                cout << "\nBAD!!!!!\n";
+        }
     }
-    cout << "Construct Number:" << endl;
-    cout << CirType::cnsNum << endl;
+    // CirType::cnsNum = 0;
+    // CirType::desNum = 0;
+    // cout << endl << "Press any key:";
+    // cin.get();
+    // cout << "TimeTest" << endl;
+    // {
+    //     const size_t memUse = getCurrentRSS();
+    //     boost::timer::cpu_timer t;
+    //     t.start();
+    //     for (size_t i = 0; i < LOOPSIZE; i++) {
+    //         for(auto j = 20; j < 50; j++)
+    //             CirType::Create(j)->GetLast();
+    //     }
+    //     t.stop();
+    //     cout << "all : " << t.elapsed().wall/1000000 << "ms" << endl;   //输出：start()至调用此函数的经过时间
+    //     cout << "user : " << t.elapsed().user/1000000 << "ms" << endl;   //输出：start()至调用此函数的用户时间
+    //     cout << "system : " << t.elapsed().system/1000000 << "ms" << endl; //输出：start()至调用此函数的系统时间
+    //     cout << "memory use:" << getCurrentRSS() - memUse << endl;
+    // }
+    cout << "Construct Number: " << CirType::cnsNum << endl;
+    cout << "Destruct Number: " << CirType::desNum << endl;
 }
 

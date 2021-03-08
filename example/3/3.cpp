@@ -29,7 +29,7 @@ struct ListNodeA {
     static size_t cnsNum;
     int val;
     ListNodeA *next;
-    ListNodeA(int x) : val(x), next(NULL) {
+    ListNodeA(int x) : val(x), next(nullptr) {
         #if HAVE_CNS
         cnsNum ++;
         #endif
@@ -73,7 +73,7 @@ struct ListNodeB {
     static size_t cnsNum;
     int val;
     shared_ptr<ListNodeB> next;
-    ListNodeB(int x) : val(x), next(NULL) {
+    ListNodeB(int x) : val(x), next(nullptr) {
         #if HAVE_CNS
         cnsNum ++;
         #endif
@@ -119,7 +119,7 @@ struct ListNodeC {
     static size_t cnsNum;
     int val;
     SmarterPtr<ListNodeC> next;
-    ListNodeC(int x) : val(x), next(NULL) {
+    ListNodeC(int x) : val(x), next(nullptr) {
         #if HAVE_CNS
         cnsNum ++;
         #endif
@@ -162,7 +162,7 @@ struct ListNodeD {
     static size_t cnsNum;
     int val;
     CountPtr<ListNodeD> next;
-    ListNodeD(int x) : val(x), next(NULL) {
+    ListNodeD(int x) : val(x), next(nullptr) {
         #if HAVE_CNS
         cnsNum ++;
         #endif
@@ -204,7 +204,7 @@ struct ListNodeE {
     static size_t cnsNum;
     int val;
     MTCountPtr<ListNodeE> next;
-    ListNodeE(int x) : val(x), next(NULL) {
+    ListNodeE(int x) : val(x), next(nullptr) {
         #if HAVE_CNS
         cnsNum ++;
         #endif

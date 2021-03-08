@@ -103,7 +103,7 @@ struct CirNodeA {
 
     static size_t cnsNum;
     TPtr l, r;
-    CirNodeA() : l(NULL), r(NULL) {
+    CirNodeA() : l(nullptr), r(nullptr) {
         #if HAVE_CNS
         cnsNum ++;
         #endif
@@ -130,7 +130,7 @@ struct CirNodeC {
 
     static size_t cnsNum;
     TPtr l, r;
-    CirNodeC() : l(NULL), r(NULL) {
+    CirNodeC() : l(nullptr), r(nullptr) {
         #if HAVE_CNS
         cnsNum ++;
         #endif
@@ -160,7 +160,7 @@ struct CirNodeD {
 
     static size_t cnsNum;
     TPtr l, r;
-    CirNodeD() : l(NULL), r(NULL) {
+    CirNodeD() : l(nullptr), r(nullptr) {
         #if HAVE_CNS
         cnsNum ++;
         #endif
@@ -239,7 +239,8 @@ public:
                 cursors[myId] = T::Alloc();
             } break;
             case 1: { //左连接
-                cursors[myId].load()->l = TPtr(cursors[rThr(g)]);
+                // cursors[myId].load()->l = TPtr(cursors[rThr(g)]);
+                cursors[myId].load()->l = cursors[rThr(g)];
             } break;
             case 2: { //右连接
                 cursors[myId].load()->r = TPtr(cursors[rThr(g)]);

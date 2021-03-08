@@ -20,7 +20,11 @@ using namespace RTGC;
 #define HAVE_CNS 1
 #define HAVE_DES 1
 
-struct ListNodeA {
+struct ListNode {
+    // virtual ~ListNode() {}
+};
+
+struct ListNodeA : ListNode {
     using TPtr = ListNodeA*;
     static auto Alloc(int val) {
         return new ListNodeA(val);
@@ -32,7 +36,7 @@ struct ListNodeA {
     ListNodeA *next;
     ListNodeA(int x) : val(x), next(NULL) {
         #if HAVE_CNS
-        cnsNum ++;
+        cnsNum++;
         if(cnsNum >= cnsNumMax)
             cnsNumMax = cnsNum;
         #endif
@@ -60,12 +64,12 @@ struct ListNodeA {
     }
     ~ListNodeA() {
         #if HAVE_DES
-        cnsNum --;
+        cnsNum--;
         #endif
     }
 };
 
-struct ListNodeB {
+struct ListNodeB : ListNode {
     using TPtr = shared_ptr<ListNodeB>;
     static auto Alloc(int val) {
         return make_shared<ListNodeB>(val);
@@ -77,7 +81,7 @@ struct ListNodeB {
     shared_ptr<ListNodeB> next;
     ListNodeB(int x) : val(x), next(NULL) {
         #if HAVE_CNS
-        cnsNum ++;
+        cnsNum++;
         if(cnsNum >= cnsNumMax)
             cnsNumMax = cnsNum;
         #endif
@@ -105,12 +109,12 @@ struct ListNodeB {
     }
     ~ListNodeB() {
         #if HAVE_DES
-        cnsNum --;
+        cnsNum--;
         #endif
     }
 };
 
-struct ListNodeC {
+struct ListNodeC : ListNode {
     using TPtr = ChainPtr<ListNodeC>;
     static auto Alloc(int val) {
         return MakeChain<ListNodeC>(val);
@@ -121,9 +125,9 @@ struct ListNodeC {
     RTGC_AutoChainLink(ListNodeC, 2)
     int val;
     ChainPtr<ListNodeC> next;
-    ListNodeC(int x) : val(x), next(NULL) {
+    ListNodeC(int x) : val(x), next(nullptr) {
         #if HAVE_CNS
-        cnsNum ++;
+        cnsNum++;
         if(cnsNum >= cnsNumMax)
             cnsNumMax = cnsNum;
         #endif
@@ -151,7 +155,7 @@ struct ListNodeC {
     }
     ~ListNodeC() {
         #if HAVE_DES
-        cnsNum --;
+        cnsNum--;
         #endif
     }
 };
@@ -182,7 +186,7 @@ struct ListNodeD : public GC_NS_QUALIFY(gc_cleanup) {
     }
     ListNodeD(int x) : val(x), next(NULL) {
         #if HAVE_CNS
-        cnsNum ++;
+        cnsNum++;
         if(cnsNum >= cnsNumMax)
             cnsNumMax = cnsNum;
         #endif
@@ -210,7 +214,7 @@ struct ListNodeD : public GC_NS_QUALIFY(gc_cleanup) {
     }
     ~ListNodeD() {
         #if HAVE_DES
-        cnsNum --;
+        cnsNum--;
         #endif
     }
 };

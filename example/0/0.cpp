@@ -24,7 +24,7 @@ public:
     RTGC_AutoChainLink(T1, 2);
     RTGC_AutoCRDetectIn(T1, 2);
 };
-RTGC_AutoCRDetectOut(T1, true);
+RTGC_AutoCRDetectOut(T1);
 
 class T2 {//use shared_ptr
 private:
